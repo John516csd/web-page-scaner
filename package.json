@@ -1,0 +1,12 @@
+{
+  "name": "web-page-scanner",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n fe,be -c blue,green \"pnpm --filter frontend dev\" \"pnpm --filter backend dev\"",
+    "build": "pnpm --filter frontend build && pnpm --filter backend build",
+    "lint": "pnpm --filter frontend lint"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
