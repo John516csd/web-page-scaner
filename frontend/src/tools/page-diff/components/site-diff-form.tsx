@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -32,10 +33,14 @@ function ConfirmedSummary({
   state,
   onReset,
   loading,
+  autoRun,
+  onAutoRunChange,
 }: {
   state: ConfirmedState;
   onReset: () => void;
   loading: boolean;
+  autoRun: boolean;
+  onAutoRunChange: (v: boolean) => void;
 }) {
   return (
     <div className="space-y-4">
@@ -84,6 +89,10 @@ function ConfirmedSummary({
           <span className="font-medium">{state.batchSize} 个</span>
         </div>
         <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground">页面并发:</span>
+          <span className="font-medium">{state.options?.pageConcurrency ?? 2}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
           <span className="text-muted-foreground">检查项:</span>
           <div className="flex gap-1">
             {state.checks.map((check) => (
@@ -92,6 +101,16 @@ function ConfirmedSummary({
               </Badge>
             ))}
           </div>
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
+          <Switch
+            id="confirmed-autoRun"
+            checked={autoRun}
+            onCheckedChange={onAutoRunChange}
+          />
+          <Label htmlFor="confirmed-autoRun" className="cursor-pointer whitespace-nowrap">
+            自动跑完全部
+          </Label>
         </div>
       </div>
     </div>
@@ -108,6 +127,8 @@ export function SiteDiffForm({
   totalPages,
   confirmed,
   confirmedState,
+  autoRun,
+  onAutoRunChange,
 }: {
   onLoadSitemap: (url: string) => Promise<{ paths: string[]; total: number } | null>;
   onSetPaths: (paths: string[]) => void;
@@ -125,14 +146,17 @@ export function SiteDiffForm({
   totalPages: number;
   confirmed: boolean;
   confirmedState: ConfirmedState | null;
+  autoRun: boolean;
+  onAutoRunChange: (v: boolean) => void;
 }) {
   if (confirmed && confirmedState) {
-    return <ConfirmedSummary state={confirmedState} onReset={onReset} loading={loading} />;
+    return <ConfirmedSummary state={confirmedState} onReset={onReset} loading={loading} autoRun={autoRun} onAutoRunChange={onAutoRunChange} />;
   }
   const [baseUrlA, setBaseUrlA] = useState("");
   const [baseUrlB, setBaseUrlB] = useState("");
   const [checks, setChecks] = useState<CheckType[]>(["http", "seo", "content", "visual"]);
   const [batchSize, setBatchSize] = useState("10");
+  const [pageConcurrency, setPageConcurrency] = useState(2);
   const [sitemapUrl, setSitemapUrl] = useState("");
   const [loadingSitemap, setLoadingSitemap] = useState(false);
   const [showPaths, setShowPaths] = useState(false);
@@ -244,6 +268,7 @@ export function SiteDiffForm({
       paths: effectivePaths,
       checks,
       batchSize: parseInt(batchSize),
+      options: { pageConcurrency },
     });
   };
 
@@ -259,6 +284,7 @@ export function SiteDiffForm({
     setShowSitemapInput(false);
     setChecks(["http", "seo", "content", "visual"]);
     setBatchSize("10");
+    setPageConcurrency(2);
     lastAutoLoadedOrigin.current = "";
     if (debounceRef.current) clearTimeout(debounceRef.current);
     onReset();
@@ -469,6 +495,21 @@ export function SiteDiffForm({
 
         <Separator orientation="vertical" className="h-5" />
 
+        <div className="flex items-center gap-2">
+          <Label htmlFor="site-pageConcurrency" className="whitespace-nowrap">页面并发</Label>
+          <Input
+            id="site-pageConcurrency"
+            type="number"
+            min={1}
+            max={5}
+            value={pageConcurrency}
+            onChange={(e) => setPageConcurrency(parseInt(e.target.value) || 2)}
+            className="w-16 h-8"
+          />
+        </div>
+
+        <Separator orientation="vertical" className="h-5" />
+
         <div className="flex items-center gap-4">
           <Label className="whitespace-nowrap">检查项</Label>
           {(["http", "seo", "content", "visual"] as const).map((check) => (
@@ -483,6 +524,19 @@ export function SiteDiffForm({
               </Label>
             </div>
           ))}
+        </div>
+
+        <Separator orientation="vertical" className="h-5" />
+
+        <div className="flex items-center gap-2">
+          <Switch
+            id="site-autoRun"
+            checked={autoRun}
+            onCheckedChange={onAutoRunChange}
+          />
+          <Label htmlFor="site-autoRun" className="cursor-pointer whitespace-nowrap">
+            自动跑完全部
+          </Label>
         </div>
       </div>
 

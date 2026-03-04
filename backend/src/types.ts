@@ -33,15 +33,21 @@ export interface BatchCompleteEvent {
   nextStart: number;
 }
 
+export interface TaskCancelledEvent {
+  type: 'cancelled';
+}
+
 export type TaskEvent =
   | TaskProgressEvent
   | TaskCompleteEvent
   | TaskErrorEvent
   | BatchProgressEvent
-  | BatchCompleteEvent;
+  | BatchCompleteEvent
+  | TaskCancelledEvent;
 
 export type TaskHandler = (
   taskId: string,
   payload: unknown,
-  emit: (event: TaskEvent) => void
+  emit: (event: TaskEvent) => void,
+  signal: AbortSignal
 ) => Promise<void>;

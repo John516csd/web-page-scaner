@@ -103,6 +103,13 @@ export function useSiteDiff() {
             ws.close();
           }
 
+          if (msg.type === "cancelled") {
+            setLoading(false);
+            setBatchDone(true);
+            setCurrentBatch(null);
+            ws.close();
+          }
+
           if (msg.type === "error") {
             setError(msg.message);
             setLoading(false);
@@ -121,6 +128,14 @@ export function useSiteDiff() {
     },
     []
   );
+
+  const stop = useCallback(() => {
+    wsRef.current?.close();
+    wsRef.current = null;
+    setLoading(false);
+    setBatchDone(true);
+    setCurrentBatch(null);
+  }, []);
 
   const reset = useCallback(() => {
     wsRef.current?.close();
@@ -149,6 +164,7 @@ export function useSiteDiff() {
     totalPages,
     loadSitemap,
     runBatch,
+    stop,
     reset,
   };
 }

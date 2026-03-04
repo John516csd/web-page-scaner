@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { FileSearch } from "lucide-react";
+import { FileSearch, Link2Off, GitMerge } from "lucide-react";
 
 export interface ToolMeta {
   id: string;
@@ -16,5 +16,19 @@ export const tools: ToolMeta[] = [
     description: "对比两个网页在 HTTP、SEO、视觉上的差异",
     icon: FileSearch,
     href: "/tools/page-diff",
+  },
+  {
+    id: "dead-link-checker",
+    name: "Dead Link Checker",
+    description: "检查页面上的死链（4xx/5xx 响应）",
+    icon: Link2Off,
+    href: "/tools/dead-link-checker",
+  },
+  {
+    id: "migration-tracker",
+    name: "Migration Tracker",
+    description: "Gatsby → Next.js 迁移验收：批量 Diff + AI 分析变更意图 + 导出报告",
+    icon: GitMerge,
+    href: "/tools/migration-tracker",
   },
 ];

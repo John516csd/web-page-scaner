@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -32,6 +32,7 @@ export default function PageDiffTool() {
     batchSize: number;
     options?: DiffOptions;
   } | null>(null);
+  const [autoRun, setAutoRun] = useState(false);
 
   const handleSiteSubmit = (params: {
     baseUrlA: string;
@@ -54,7 +55,7 @@ export default function PageDiffTool() {
     );
   };
 
-  const handleContinueBatch = () => {
+  const handleContinueBatch = useCallback(() => {
     if (!siteFormState) return;
     siteDiff.runBatch(
       siteFormState.baseUrlA,
@@ -65,7 +66,13 @@ export default function PageDiffTool() {
       siteDiff.nextStart,
       siteFormState.options
     );
-  };
+  }, [siteFormState, siteDiff.nextStart]);
+
+  useEffect(() => {
+    if (autoRun && siteDiff.batchDone && siteDiff.hasMore && !siteDiff.loading && siteFormState) {
+      handleContinueBatch();
+    }
+  }, [autoRun, siteDiff.batchDone, siteDiff.hasMore, siteDiff.loading, siteFormState, handleContinueBatch]);
 
   const handleRerunFailed = () => {
     if (!siteFormState) return;
@@ -144,6 +151,8 @@ export default function PageDiffTool() {
                 totalPages={siteDiff.totalPages}
                 confirmed={siteFormState !== null}
                 confirmedState={siteFormState}
+                autoRun={autoRun}
+                onAutoRunChange={setAutoRun}
               />
             </CardContent>
           </Card>
@@ -163,6 +172,8 @@ export default function PageDiffTool() {
                 hasMore={siteDiff.hasMore}
                 loading={siteDiff.loading}
                 onContinue={handleContinueBatch}
+                onStop={siteDiff.stop}
+                autoRun={autoRun}
               />
               {!siteDiff.loading && siteDiff.results.length > 0 && (
                 <ExportBatchButtons

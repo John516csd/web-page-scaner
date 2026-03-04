@@ -13,6 +13,7 @@ export interface DiffOptions {
   hideSelectors?: string[];
   waitTime?: number;
   failThreshold?: number;
+  pageConcurrency?: number;
 }
 
 export interface HttpCheckItem {

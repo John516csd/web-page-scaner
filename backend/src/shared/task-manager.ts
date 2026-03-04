@@ -5,10 +5,11 @@ import type { TaskEvent, TaskHandler } from '../types.js';
 interface Task {
   id: string;
   toolId: string;
-  status: 'pending' | 'running' | 'done' | 'error';
+  status: 'pending' | 'running' | 'done' | 'error' | 'cancelled';
   createdAt: number;
   events: TaskEvent[];
   subscribers: Set<WebSocket>;
+  abortController: AbortController;
 }
 
 class TaskManager {
@@ -21,6 +22,7 @@ class TaskManager {
 
   createTask(toolId: string, payload: unknown): string {
     const id = uuidv4();
+    const abortController = new AbortController();
     const task: Task = {
       id,
       toolId,
@@ -28,6 +30,7 @@ class TaskManager {
       createdAt: Date.now(),
       events: [],
       subscribers: new Set(),
+      abortController,
     };
     this.tasks.set(id, task);
 
@@ -37,19 +40,32 @@ class TaskManager {
     }
 
     task.status = 'running';
-    handler(id, payload, (event) => this.emit(id, event))
+    handler(id, payload, (event) => this.emit(id, event), abortController.signal)
       .then(() => {
-        task.status = 'done';
+        if (task.status === 'running') {
+          task.status = 'done';
+        }
       })
       .catch((err) => {
-        task.status = 'error';
-        this.emit(id, {
-          type: 'error',
-          message: err instanceof Error ? err.message : String(err),
-        });
+        if (task.status !== 'cancelled') {
+          task.status = 'error';
+          this.emit(id, {
+            type: 'error',
+            message: err instanceof Error ? err.message : String(err),
+          });
+        }
       });
 
     return id;
+  }
+
+  cancelTask(taskId: string) {
+    const task = this.tasks.get(taskId);
+    if (!task || task.status !== 'running') return;
+
+    task.abortController.abort();
+    task.status = 'cancelled';
+    this.emit(taskId, { type: 'cancelled' });
   }
 
   subscribe(taskId: string, ws: WebSocket) {
@@ -64,6 +80,9 @@ class TaskManager {
 
     ws.on('close', () => {
       task.subscribers.delete(ws);
+      if (task.status === 'running' && task.subscribers.size === 0) {
+        this.cancelTask(taskId);
+      }
     });
   }
 

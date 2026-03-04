@@ -9,6 +9,7 @@ import {
   XCircle,
   Bug,
   AlertOctagon,
+  Square,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,8 @@ export function BatchResult({
   hasMore,
   loading,
   onContinue,
+  onStop,
+  autoRun,
 }: {
   results: PageResult[];
   totalPages: number;
@@ -47,6 +50,8 @@ export function BatchResult({
   hasMore: boolean;
   loading: boolean;
   onContinue: () => void;
+  onStop: () => void;
+  autoRun?: boolean;
 }) {
   const [selectedItem, setSelectedItem] = useState<PageResult | null>(null);
 
@@ -99,11 +104,24 @@ export function BatchResult({
         </CardContent>
       </Card>
 
-      {currentBatch && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground animate-pulse">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          正在对比 ({currentBatch.current}/{currentBatch.total}):{" "}
-          {currentBatch.path}
+      {loading && (
+        <div className="flex items-center gap-2">
+          {currentBatch && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground animate-pulse flex-1">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              正在对比 ({currentBatch.current}/{currentBatch.total}):{" "}
+              {currentBatch.path}
+            </div>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onStop}
+            className="text-destructive border-destructive/50 hover:bg-destructive/10 shrink-0"
+          >
+            <Square className="h-3.5 w-3.5 mr-1 fill-current" />
+            停止对比
+          </Button>
         </div>
       )}
 
@@ -148,7 +166,7 @@ export function BatchResult({
         </Table>
       </Card>
 
-      {!loading && hasMore && (
+      {!loading && hasMore && !autoRun && (
         <div className="flex justify-center">
           <Button onClick={onContinue}>
             继续下一批

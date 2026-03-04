@@ -1,5 +1,4 @@
 import type { FastifyInstance } from 'fastify';
-import { XMLParser } from 'fast-xml-parser';
 import type {
   DiffRequest,
   DiffResult,
@@ -9,6 +8,7 @@ import type {
   PageResult,
 } from './types.js';
 import { taskManager } from '../../shared/task-manager.js';
+import { fetchSitemapUrls } from '../../shared/sitemap.js';
 import { checkHttp } from './http-checker.js';
 import { checkSeo } from './seo-checker.js';
 import { checkContent } from './content-checker.js';
@@ -17,7 +17,7 @@ import { checkVisual } from './visual-checker.js';
 const TOOL_ID = 'page-diff';
 const SITE_TOOL_ID = 'page-diff-site';
 
-taskManager.registerHandler(TOOL_ID, async (_taskId, payload, emit) => {
+taskManager.registerHandler(TOOL_ID, async (_taskId, payload, emit, _signal) => {
   const { urlA, urlB, checks, options } = payload as DiffRequest;
 
   const result: DiffResult = {
@@ -89,21 +89,22 @@ taskManager.registerHandler(TOOL_ID, async (_taskId, payload, emit) => {
   emit({ type: 'complete', result });
 });
 
-taskManager.registerHandler(SITE_TOOL_ID, async (_taskId, payload, emit) => {
+taskManager.registerHandler(SITE_TOOL_ID, async (_taskId, payload, emit, signal) => {
   const { baseUrlA, baseUrlB, paths, checks, batchSize, startIndex, options } =
     payload as SiteDiffRequest;
 
+  const pageConcurrency = options?.pageConcurrency ?? 2;
   const batchPaths = paths.slice(startIndex, startIndex + batchSize);
   const results: PageResult[] = [];
+  let completed = 0;
 
-  for (let i = 0; i < batchPaths.length; i++) {
-    const path = batchPaths[i];
+  const processPage = async (path: string) => {
     const urlA = new URL(path, baseUrlA).toString();
     const urlB = new URL(path, baseUrlB).toString();
 
     emit({
       type: 'batch_progress',
-      current: i + 1,
+      current: ++completed,
       total: batchPaths.length,
       path,
       status: 'running',
@@ -143,7 +144,7 @@ taskManager.registerHandler(SITE_TOOL_ID, async (_taskId, payload, emit) => {
       results.push(pageResult);
       emit({
         type: 'batch_progress',
-        current: i + 1,
+        current: completed,
         total: batchPaths.length,
         path,
         status: 'done',
@@ -159,23 +160,36 @@ taskManager.registerHandler(SITE_TOOL_ID, async (_taskId, payload, emit) => {
       results.push(pageResult);
       emit({
         type: 'batch_progress',
-        current: i + 1,
+        current: completed,
         total: batchPaths.length,
         path,
         status: 'done',
         data: pageResult,
       });
     }
-  }
+  };
 
-  const nextStart = startIndex + batchSize;
-  emit({
-    type: 'batch_complete',
-    batchIndex: Math.floor(startIndex / batchSize),
-    results,
-    hasMore: nextStart < paths.length,
-    nextStart,
-  });
+  const executing = new Set<Promise<void>>();
+  for (const path of batchPaths) {
+    if (signal.aborted) break;
+    const p = processPage(path).then(() => { executing.delete(p); });
+    executing.add(p);
+    if (executing.size >= pageConcurrency) {
+      await Promise.race(executing);
+    }
+  }
+  await Promise.all(executing);
+
+  if (!signal.aborted) {
+    const nextStart = startIndex + batchSize;
+    emit({
+      type: 'batch_complete',
+      batchIndex: Math.floor(startIndex / batchSize),
+      results,
+      hasMore: nextStart < paths.length,
+      nextStart,
+    });
+  }
 });
 
 function changeRatio(added: number, removed: number, total: number): number {
@@ -207,47 +221,6 @@ function hasWarnings(result: DiffResult): boolean {
     (v) => v.diffPercentage > 0 && v.diffPercentage <= 15
   ) ?? false;
   return contentWarn || visualWarn;
-}
-
-const MAX_SITEMAP_DEPTH = 3;
-
-async function fetchSitemapUrls(url: string, depth = 0): Promise<string[]> {
-  if (depth > MAX_SITEMAP_DEPTH) return [];
-
-  const response = await fetch(url, {
-    headers: { 'User-Agent': 'WebPageScanner/1.0' },
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status} fetching ${url}`);
-  }
-
-  const xml = await response.text();
-  const parser = new XMLParser();
-  const parsed = parser.parse(xml);
-
-  if (parsed.urlset?.url) {
-    const entries = Array.isArray(parsed.urlset.url)
-      ? parsed.urlset.url
-      : [parsed.urlset.url];
-    return entries.map((u: { loc: string }) => u.loc).filter(Boolean);
-  }
-
-  if (parsed.sitemapindex?.sitemap) {
-    const sitemaps = Array.isArray(parsed.sitemapindex.sitemap)
-      ? parsed.sitemapindex.sitemap
-      : [parsed.sitemapindex.sitemap];
-    const childUrls = sitemaps.map((s: { loc: string }) => s.loc).filter(Boolean);
-
-    const results = await Promise.all(
-      childUrls.map((childUrl: string) =>
-        fetchSitemapUrls(childUrl, depth + 1).catch(() => [] as string[])
-      )
-    );
-    return results.flat();
-  }
-
-  return [];
 }
 
 export function registerRoutes(fastify: FastifyInstance) {
