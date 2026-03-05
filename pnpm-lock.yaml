@@ -44,6 +44,9 @@ importers:
       pngjs:
         specifier: ^7.0.0
         version: 7.0.0
+      undici:
+        specifier: ^7.22.0
+        version: 7.22.0
       uuid:
         specifier: ^11.0.0
         version: 11.1.0

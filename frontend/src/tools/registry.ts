@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { FileSearch, Link2Off, GitMerge } from "lucide-react";
+import { FileSearch, Link2Off, GitMerge, Route } from "lucide-react";
 
 export interface ToolMeta {
   id: string;
@@ -30,5 +30,12 @@ export const tools: ToolMeta[] = [
     description: "Gatsby → Next.js 迁移验收：批量 Diff + AI 分析变更意图 + 导出报告",
     icon: GitMerge,
     href: "/tools/migration-tracker",
+  },
+  {
+    id: "redirect-tester",
+    name: "Redirect Tester",
+    description: "CloudFront / Lambda@Edge 重定向规则批量测试与验证",
+    icon: Route,
+    href: "/tools/redirect-tester",
   },
 ];

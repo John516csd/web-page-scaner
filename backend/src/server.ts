@@ -6,6 +6,7 @@ import { closeBrowser } from './shared/browser.js';
 import pageDiffPlugin from './tools/page-diff/index.js';
 import deadLinkCheckerPlugin from './tools/dead-link-checker/index.js';
 import migrationTrackerPlugin from './tools/migration-tracker/index.js';
+import redirectTesterPlugin from './tools/redirect-tester/index.js';
 
 const fastify = Fastify({ logger: true });
 
@@ -23,6 +24,7 @@ async function start() {
   await fastify.register(pageDiffPlugin, { prefix: '/api/tools/page-diff' });
   await fastify.register(deadLinkCheckerPlugin, { prefix: '/api/tools/dead-link-checker' });
   await fastify.register(migrationTrackerPlugin, { prefix: '/api/tools/migration-tracker' });
+  await fastify.register(redirectTesterPlugin, { prefix: '/api/tools/redirect-tester' });
 
   fastify.get('/api/health', async () => ({ status: 'ok' }));
 
