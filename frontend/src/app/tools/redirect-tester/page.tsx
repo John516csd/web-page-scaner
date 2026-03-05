@@ -6,13 +6,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Wifi, WifiOff, Globe } from "lucide-react";
 import { TestCaseEditor } from "@/tools/redirect-tester/components/test-case-editor";
 import { TestResults } from "@/tools/redirect-tester/components/test-results";
 import { useRedirectTester } from "@/tools/redirect-tester/hooks/use-redirect-tester";
+import { apiPost } from "@/lib/api";
 import {
   DEFAULT_TEST_CASES,
   type RedirectTestCase,
 } from "@/tools/redirect-tester/types";
+
+interface ProxyStatus {
+  ok: boolean;
+  mode: "direct" | "proxy";
+  ip?: string;
+  country?: string;
+  city?: string;
+  autoSwitch?: boolean;
+  error?: string;
+}
 
 export default function RedirectTesterPage() {
   const [testCases, setTestCases] =
@@ -21,13 +34,42 @@ export default function RedirectTesterPage() {
     () => new Set(DEFAULT_TEST_CASES.map((tc) => tc.id))
   );
   const [proxy, setProxy] = useState("http://127.0.0.1:9674");
+  const [proxyStatus, setProxyStatus] = useState<ProxyStatus | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [runningCases, setRunningCases] = useState<RedirectTestCase[]>([]);
 
   const tester = useRedirectTester();
-
-  const { run, stop, loading, results, summary, currentTest, progress } = tester;
+  const { run, stop, loading, results, summary, currentTest, progress } =
+    tester;
 
   const handleRun = useCallback(
-    (cases: RedirectTestCase[]) => {
+    async (cases: RedirectTestCase[]) => {
+      if (proxy) {
+        setChecking(true);
+        try {
+          const status = await apiPost<ProxyStatus>(
+            "/tools/redirect-tester/check-proxy",
+            { proxy }
+          );
+          setProxyStatus(status);
+          if (!status.ok) {
+            setChecking(false);
+            return;
+          }
+        } catch {
+          setProxyStatus({
+            ok: false,
+            mode: "proxy",
+            error: "无法连接后端，请检查服务是否启动",
+          });
+          setChecking(false);
+          return;
+        }
+        setChecking(false);
+      } else {
+        setProxyStatus(null);
+      }
+      setRunningCases(cases);
       run(cases, proxy || undefined);
     },
     [run, proxy]
@@ -50,7 +92,10 @@ export default function RedirectTesterPage() {
           </Label>
           <Input
             value={proxy}
-            onChange={(e) => setProxy(e.target.value)}
+            onChange={(e) => {
+              setProxy(e.target.value);
+              setProxyStatus(null);
+            }}
             placeholder="留空则直连"
             className="font-mono text-xs h-7 w-56"
           />
@@ -72,6 +117,37 @@ export default function RedirectTesterPage() {
         </div>
       </div>
 
+      {/* Proxy status alerts */}
+      {proxyStatus && !proxyStatus.ok && (
+        <Alert variant="destructive">
+          <WifiOff className="h-4 w-4" />
+          <AlertDescription>
+            {proxyStatus.error || "代理连接失败"} — 请开启 VPN
+            后再运行测试
+          </AlertDescription>
+        </Alert>
+      )}
+      {proxyStatus && proxyStatus.ok && proxyStatus.mode === "proxy" && (
+        <Alert>
+          <Wifi className="h-4 w-4" />
+          <AlertDescription className="flex items-center gap-2">
+            <span>
+              代理已连接 — IP: {proxyStatus.ip} ({proxyStatus.city},{" "}
+              {proxyStatus.country})
+            </span>
+            {proxyStatus.autoSwitch && (
+              <Badge
+                variant="outline"
+                className="text-[10px] border-orange-200 text-orange-600"
+              >
+                <Globe className="h-2.5 w-2.5 mr-0.5" />
+                自动切国家
+              </Badge>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Separator />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -81,7 +157,7 @@ export default function RedirectTesterPage() {
             <CardTitle className="text-sm">测试用例</CardTitle>
           </CardHeader>
           <Separator />
-          <CardContent className="pt-3 pb-3 px-3 flex-1 overflow-y-auto max-h-[calc(100vh-220px)]">
+          <CardContent className="pt-3 pb-3 px-3 flex-1 overflow-y-auto max-h-[calc(100vh-280px)]">
             <TestCaseEditor
               testCases={testCases}
               onTestCasesChange={setTestCases}
@@ -89,15 +165,16 @@ export default function RedirectTesterPage() {
               onSelectedIdsChange={setSelectedIds}
               onRun={handleRun}
               onStop={stop}
-              loading={loading}
+              loading={loading || checking}
             />
           </CardContent>
         </Card>
 
         {/* Right: results */}
-        <div className="max-h-[calc(100vh-220px)] overflow-y-auto space-y-3">
+        <div className="max-h-[calc(100vh-280px)] overflow-y-auto space-y-3">
           {results.length > 0 || loading ? (
             <TestResults
+              testCases={runningCases}
               results={results}
               summary={summary}
               loading={loading}

@@ -27,6 +27,8 @@ import {
   ChevronDown,
   Copy,
   Check,
+  Loader2,
+  Circle,
 } from "lucide-react";
 import type {
   RedirectTestResult,
@@ -35,7 +37,10 @@ import type {
 } from "../types";
 import { CATEGORY_LABELS } from "../types";
 
+type TestItemStatus = "pending" | "running" | "done";
+
 interface TestResultsProps {
+  testCases: RedirectTestCase[];
   results: RedirectTestResult[];
   summary: TestBatchResult["summary"] | null;
   loading: boolean;
@@ -44,6 +49,7 @@ interface TestResultsProps {
 }
 
 export function TestResults({
+  testCases,
   results,
   summary,
   loading,
@@ -55,17 +61,29 @@ export function TestResults({
   );
   const [copiedCurl, setCopiedCurl] = useState(false);
 
-  const groupedResults = useMemo(() => {
-    const groups: Record<RedirectTestCase["category"], RedirectTestResult[]> = {
+  const resultMap = useMemo(() => {
+    const map = new Map<string, RedirectTestResult>();
+    results.forEach((r) => map.set(r.testCase.id, r));
+    return map;
+  }, [results]);
+
+  const runningId = useMemo(() => {
+    if (!currentTest || !loading) return null;
+    const tc = testCases.find((t) => currentTest.includes(t.name));
+    return tc?.id ?? null;
+  }, [currentTest, loading, testCases]);
+
+  const groupedCases = useMemo(() => {
+    const groups: Record<RedirectTestCase["category"], RedirectTestCase[]> = {
       "viewer-request": [],
       "origin-request": [],
       extra: [],
     };
-    results.forEach((r) => {
-      groups[r.testCase.category].push(r);
+    testCases.forEach((tc) => {
+      groups[tc.category].push(tc);
     });
     return groups;
-  }, [results]);
+  }, [testCases]);
 
   const copyCurl = (tc: RedirectTestCase) => {
     let cmd = `curl -s -o /dev/null -w "%{http_code} %{redirect_url}"`;
@@ -87,29 +105,28 @@ export function TestResults({
     setTimeout(() => setCopiedCurl(false), 2000);
   };
 
-  if (results.length === 0 && !loading) return null;
+  const getItemStatus = (id: string): TestItemStatus => {
+    if (resultMap.has(id)) return "done";
+    if (runningId === id) return "running";
+    return "pending";
+  };
 
   const passRate = summary
     ? Math.round((summary.passed / summary.total) * 100)
-    : progress
-    ? Math.round(
-        (results.filter((r) => r.passed).length / Math.max(results.length, 1)) *
-          100
-      )
     : 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Progress / Summary */}
       <Card>
-        <CardContent className="pt-5 pb-4">
+        <CardContent className="pt-4 pb-3">
           {loading && progress ? (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
-                  Running tests... {progress.current}/{progress.total}
+                  测试中 {progress.current}/{progress.total}
                 </span>
-                <span className="font-mono text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground truncate ml-4 max-w-[250px]">
                   {currentTest}
                 </span>
               </div>
@@ -119,60 +136,57 @@ export function TestResults({
               />
             </div>
           ) : summary ? (
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
                 <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-xl ${
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg ${
                     summary.failed === 0
                       ? "bg-emerald-50 text-emerald-600"
                       : "bg-red-50 text-red-600"
                   }`}
                 >
                   {summary.failed === 0 ? (
-                    <CheckCircle2 className="h-6 w-6" />
+                    <CheckCircle2 className="h-5 w-5" />
                   ) : (
-                    <XCircle className="h-6 w-6" />
+                    <XCircle className="h-5 w-5" />
                   )}
                 </div>
                 <div>
-                  <div className="text-lg font-semibold">
+                  <div className="text-base font-semibold">
                     {summary.failed === 0
-                      ? "All Tests Passed"
-                      : `${summary.failed} Test${summary.failed > 1 ? "s" : ""} Failed`}
+                      ? "全部通过"
+                      : `${summary.failed} 项失败`}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {summary.passed}/{summary.total} passed · {passRate}% ·{" "}
+                    {summary.passed}/{summary.total} · {passRate}% ·{" "}
                     {(summary.duration / 1000).toFixed(1)}s
                   </div>
                 </div>
               </div>
               <div className="ml-auto flex gap-2">
-                <SummaryPill
-                  label="Passed"
-                  count={summary.passed}
-                  variant="success"
-                />
-                <SummaryPill
-                  label="Failed"
-                  count={summary.failed}
-                  variant="error"
-                />
+                <SummaryPill label="通过" count={summary.passed} variant="success" />
+                <SummaryPill label="失败" count={summary.failed} variant="error" />
               </div>
             </div>
           ) : null}
         </CardContent>
       </Card>
 
-      {/* Results by category */}
+      {/* Stable results list */}
       {(["viewer-request", "origin-request", "extra"] as const).map((cat) => {
-        const catResults = groupedResults[cat];
-        if (catResults.length === 0) return null;
+        const cases = groupedCases[cat];
+        if (cases.length === 0) return null;
+        const catResults = cases
+          .map((tc) => resultMap.get(tc.id))
+          .filter(Boolean) as RedirectTestResult[];
         const catPassed = catResults.filter((r) => r.passed).length;
+        const catDone = catResults.length;
+
         return (
           <Collapsible key={cat} defaultOpen>
             <Card>
               <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-3 px-4">
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-2.5 px-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div
@@ -187,16 +201,20 @@ export function TestResults({
                       <CardTitle className="text-sm font-medium">
                         {CATEGORY_LABELS[cat]}
                       </CardTitle>
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] ${
-                          catPassed === catResults.length
-                            ? "border-emerald-300 text-emerald-600"
-                            : "border-red-300 text-red-600"
-                        }`}
-                      >
-                        {catPassed}/{catResults.length}
-                      </Badge>
+                      {catDone > 0 && (
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] ${
+                            catDone === cases.length && catPassed === catDone
+                              ? "border-emerald-300 text-emerald-600"
+                              : catDone === cases.length
+                              ? "border-red-300 text-red-600"
+                              : "border-zinc-300 text-zinc-500"
+                          }`}
+                        >
+                          {catPassed}/{catDone}
+                        </Badge>
+                      )}
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]_&]:rotate-180" />
                   </div>
@@ -204,38 +222,58 @@ export function TestResults({
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <CardContent className="pt-0 px-2 pb-2">
-                  <div className="space-y-0.5">
-                    {catResults.map((result) => (
-                      <div
-                        key={result.testCase.id}
-                        className="flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-md hover:bg-muted/40 transition-colors"
-                        onClick={() => setDetailResult(result)}
-                      >
-                        <div className="shrink-0">
-                          {result.passed ? (
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                          ) : (
-                            <XCircle className="h-3.5 w-3.5 text-red-500" />
+                  <div className="space-y-0">
+                    {cases.map((tc) => {
+                      const result = resultMap.get(tc.id);
+                      const status = getItemStatus(tc.id);
+                      return (
+                        <div
+                          key={tc.id}
+                          className={`flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors ${
+                            result
+                              ? "cursor-pointer hover:bg-muted/40"
+                              : ""
+                          }`}
+                          onClick={() => result && setDetailResult(result)}
+                        >
+                          <div className="shrink-0">
+                            {status === "running" ? (
+                              <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin" />
+                            ) : status === "done" && result?.passed ? (
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                            ) : status === "done" && !result?.passed ? (
+                              <XCircle className="h-3.5 w-3.5 text-red-500" />
+                            ) : (
+                              <Circle className="h-3.5 w-3.5 text-zinc-200" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span
+                              className={`text-[13px] font-medium truncate block ${
+                                status === "pending"
+                                  ? "text-muted-foreground"
+                                  : ""
+                              }`}
+                            >
+                              {tc.name}
+                            </span>
+                            {result && !result.passed && result.failureReason && (
+                              <p className="text-[11px] text-red-500 truncate">
+                                {result.failureReason}
+                              </p>
+                            )}
+                          </div>
+                          {result && (
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <StatusBadge status={result.actualStatus} />
+                              <span className="text-[10px] font-mono text-muted-foreground">
+                                {result.durationMs}ms
+                              </span>
+                            </div>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-[13px] font-medium truncate block">
-                            {result.testCase.name}
-                          </span>
-                          {!result.passed && result.failureReason && (
-                            <p className="text-[11px] text-red-500 truncate">
-                              {result.failureReason}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <StatusBadge status={result.actualStatus} />
-                          <span className="text-[10px] font-mono text-muted-foreground">
-                            {result.durationMs}ms
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </CardContent>
               </CollapsibleContent>
@@ -276,24 +314,31 @@ export function TestResults({
                 <DetailRow label="实际状态码">
                   <StatusBadge status={detailResult.actualStatus} />
                 </DetailRow>
-                {(detailResult.testCase.expectedRedirectUrl || detailResult.actualRedirectUrl) && (
+                {(detailResult.testCase.expectedRedirectUrl ||
+                  detailResult.actualRedirectUrl) && (
                   <>
                     <DetailRow label="预期重定向" mono>
-                      {detailResult.testCase.expectedRedirectUrl || <span className="text-muted-foreground italic">无</span>}
+                      {detailResult.testCase.expectedRedirectUrl || (
+                        <span className="text-muted-foreground italic">无</span>
+                      )}
                     </DetailRow>
                     <DetailRow label="实际重定向" mono>
-                      {detailResult.actualRedirectUrl || <span className="text-muted-foreground italic">无 (未返回 Location 头)</span>}
+                      {detailResult.actualRedirectUrl || (
+                        <span className="text-muted-foreground italic">
+                          无 (未返回 Location 头)
+                        </span>
+                      )}
                     </DetailRow>
                   </>
                 )}
                 {detailResult.usedNode && (
                   <DetailRow label="代理节点">
-                    <span className="text-orange-600">{detailResult.usedNode}</span>
+                    <span className="text-orange-600">
+                      {detailResult.usedNode}
+                    </span>
                   </DetailRow>
                 )}
-                <DetailRow label="耗时">
-                  {detailResult.durationMs}ms
-                </DetailRow>
+                <DetailRow label="耗时">{detailResult.durationMs}ms</DetailRow>
                 {!detailResult.passed && detailResult.failureReason && (
                   <DetailRow label="失败原因">
                     <span className="text-red-500">
@@ -323,7 +368,9 @@ export function TestResults({
                             <div key={k}>
                               <span className="text-sky-400">{k}</span>
                               <span className="text-zinc-500">: </span>
-                              <span className="text-zinc-300 break-all">{v}</span>
+                              <span className="text-zinc-300 break-all">
+                                {v}
+                              </span>
                             </div>
                           )
                         )}

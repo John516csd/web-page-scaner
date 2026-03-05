@@ -24,31 +24,21 @@ export function registerRoutes(fastify: FastifyInstance) {
         let usedNode: string | undefined;
 
         if (canSwitch && testCase.country && testCase.country !== lastCountry) {
-          emit({
-            type: 'progress',
-            step: `switch-${testCase.id}`,
-            status: 'running',
-            message: `Switching proxy to ${testCase.country}...`,
-            data: { index: i, total: testCases.length },
-          });
-
           const nodeName = await switchToCountry(testCase.country);
           if (nodeName) {
             usedNode = nodeName;
             lastCountry = testCase.country;
-          } else {
-            usedNode = undefined;
           }
-        } else if (canSwitch && testCase.country) {
-          usedNode = lastCountry ? `(cached: ${lastCountry})` : undefined;
+        } else if (canSwitch && testCase.country && lastCountry) {
+          usedNode = lastCountry;
         }
 
         emit({
           type: 'progress',
           step: `test-${testCase.id}`,
           status: 'running',
-          message: `Running: ${testCase.name}${usedNode ? ` [${usedNode}]` : ''}`,
-          data: { index: i, total: testCases.length },
+          message: testCase.name,
+          data: { index: i, total: testCases.length, usedNode },
         });
 
         const result = await executeTest(testCase, proxy);
@@ -88,6 +78,32 @@ export function registerRoutes(fastify: FastifyInstance) {
           },
         },
       });
+    }
+  });
+
+  fastify.post('/check-proxy', async (request) => {
+    const { proxy } = request.body as { proxy?: string };
+    if (!proxy) return { ok: true, mode: 'direct' as const };
+
+    try {
+      const { fetch: undiciFetch } = await import('undici');
+      const { ProxyAgent } = await import('undici');
+      const res = await undiciFetch('https://ipinfo.io/json', {
+        dispatcher: new ProxyAgent(proxy),
+        signal: AbortSignal.timeout(5000),
+      });
+      const data = await res.json() as { country?: string; city?: string; ip?: string };
+      const mihomoUp = await isAvailable();
+      return {
+        ok: true,
+        mode: 'proxy' as const,
+        ip: data.ip,
+        country: data.country,
+        city: data.city,
+        autoSwitch: mihomoUp,
+      };
+    } catch {
+      return { ok: false, mode: 'proxy' as const, error: '代理连接失败，请检查 VPN 是否已开启' };
     }
   });
 
