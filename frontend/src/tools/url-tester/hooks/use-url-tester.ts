@@ -4,14 +4,14 @@ import { useState, useCallback, useRef } from "react";
 import { apiPost } from "@/lib/api";
 import { createWebSocket } from "@/lib/api";
 import type {
-  RedirectTestCase,
-  RedirectTestResult,
+  UrlTestCase,
+  UrlTestResult,
   TestBatchResult,
 } from "../types";
 
-export function useRedirectTester() {
+export function useUrlTester() {
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<RedirectTestResult[]>([]);
+  const [results, setResults] = useState<UrlTestResult[]>([]);
   const [summary, setSummary] = useState<TestBatchResult["summary"] | null>(
     null
   );
@@ -21,21 +21,23 @@ export function useRedirectTester() {
     total: number;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [slackSent, setSlackSent] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
 
-  const run = useCallback(async (testCases: RedirectTestCase[], proxy?: string) => {
+  const run = useCallback(async (testCases: UrlTestCase[], proxy?: string, notifySlack?: boolean) => {
     setLoading(true);
     setResults([]);
     setSummary(null);
     setCurrentTest(null);
     setProgress(null);
     setError(null);
+    setSlackSent(false);
 
     try {
       const { taskId } = await apiPost<{ taskId: string }>(
-        "/tools/redirect-tester/run",
-        { testCases, proxy: proxy || undefined }
+        "/tools/url-tester/run",
+        { testCases, proxy: proxy || undefined, notifySlack }
       );
 
       const ws = createWebSocket(taskId);
@@ -54,7 +56,7 @@ export function useRedirectTester() {
             "testCase" in msg.data &&
             (msg.status === "done" || msg.status === "error")
           ) {
-            setResults((prev) => [...prev, msg.data as RedirectTestResult]);
+            setResults((prev) => [...prev, msg.data as UrlTestResult]);
           }
         } else if (msg.type === "complete") {
           const batch = msg.result as TestBatchResult;
@@ -62,6 +64,8 @@ export function useRedirectTester() {
           setLoading(false);
           setCurrentTest(null);
           ws.close();
+        } else if (msg.type === "slack_sent") {
+          setSlackSent(true);
         } else if (msg.type === "error") {
           setError(msg.message);
           setLoading(false);
@@ -98,6 +102,7 @@ export function useRedirectTester() {
     setSummary(null);
     setProgress(null);
     setError(null);
+    setSlackSent(false);
   }, [stop]);
 
   return {
@@ -107,6 +112,7 @@ export function useRedirectTester() {
     currentTest,
     progress,
     error,
+    slackSent,
     run,
     stop,
     reset,

@@ -2,13 +2,15 @@ import type { FastifyInstance } from 'fastify';
 import { taskManager } from '../../shared/task-manager.js';
 import { executeTest } from './test-executor.js';
 import { getCurrentNode, switchToCountry, switchToNode, isAvailable } from './node-switcher.js';
-import type { RunTestsRequest } from './types.js';
+import { sendSlackMessage, formatTestReport } from '../../shared/slack.js';
+import { getSchedule, updateSchedule, runScheduleNow } from './scheduler.js';
+import type { RunTestsRequest, UrlTestCase } from './types.js';
 
-const TOOL_ID = 'redirect-tester';
+const TOOL_ID = 'url-tester';
 
 export function registerRoutes(fastify: FastifyInstance) {
   taskManager.registerHandler(TOOL_ID, async (_taskId, payload, emit, signal) => {
-    const { testCases, proxy } = payload as RunTestsRequest;
+    const { testCases, proxy, notifySlack } = payload as RunTestsRequest;
     const results = [];
     const startTime = Date.now();
 
@@ -66,18 +68,46 @@ export function registerRoutes(fastify: FastifyInstance) {
 
     if (!signal.aborted) {
       const totalDuration = Date.now() - startTime;
+      const summary = {
+        total: results.length,
+        passed: results.filter((r) => r.passed).length,
+        failed: results.filter((r) => !r.passed).length,
+        duration: totalDuration,
+      };
+
       emit({
         type: 'complete',
         result: {
           results,
-          summary: {
-            total: results.length,
-            passed: results.filter((r) => r.passed).length,
-            failed: results.filter((r) => !r.passed).length,
-            duration: totalDuration,
-          },
+          summary,
         },
       });
+
+      if (notifySlack && process.env.SLACK_WEBHOOK_URL) {
+        try {
+          const failures = results
+            .filter((r) => !r.passed)
+            .map((r) => ({
+              name: r.testCase.name,
+              url: r.testCase.url,
+              expectedStatus: r.testCase.expectedStatus,
+              actualStatus: r.actualStatus,
+              expectedRedirectUrl: r.testCase.expectedRedirectUrl,
+              actualRedirectUrl: r.actualRedirectUrl,
+              failureReason: r.failureReason,
+            }));
+
+          const blocks = formatTestReport('URL Tester', summary, failures);
+          await sendSlackMessage(process.env.SLACK_WEBHOOK_URL, blocks);
+
+          emit({
+            type: 'slack_sent',
+            message: 'Slack notification sent',
+          });
+        } catch (error) {
+          fastify.log.error('Failed to send Slack notification:', error);
+        }
+      }
     }
   });
 
@@ -116,5 +146,43 @@ export function registerRoutes(fastify: FastifyInstance) {
 
     const taskId = taskManager.createTask(TOOL_ID, body);
     return { taskId };
+  });
+
+  fastify.get('/schedule', async () => {
+    const schedule = await getSchedule();
+    return schedule || null;
+  });
+
+  fastify.put('/schedule', async (request) => {
+    const body = request.body as {
+      cron: string;
+      enabled: boolean;
+      caseIds?: string[];
+      proxy?: string;
+      notifySlack?: boolean;
+      testCases?: UrlTestCase[];
+    };
+
+    if (!body.cron) {
+      throw { statusCode: 400, message: 'cron expression is required' };
+    }
+
+    const schedule = await updateSchedule(body.cron, body.enabled, {
+      caseIds: body.caseIds,
+      proxy: body.proxy,
+      notifySlack: body.notifySlack,
+      testCases: body.testCases,
+    });
+
+    return schedule;
+  });
+
+  fastify.post('/schedule/run', async () => {
+    try {
+      const result = await runScheduleNow();
+      return result;
+    } catch (error) {
+      throw { statusCode: 400, message: (error as Error).message };
+    }
   });
 }

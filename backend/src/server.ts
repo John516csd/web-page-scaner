@@ -3,14 +3,19 @@ import cors from '@fastify/cors';
 import websocket from '@fastify/websocket';
 import { taskManager } from './shared/task-manager.js';
 import { closeBrowser } from './shared/browser.js';
+import { scheduler } from './shared/scheduler.js';
 import pageDiffPlugin from './tools/page-diff/index.js';
 import deadLinkCheckerPlugin from './tools/dead-link-checker/index.js';
 import migrationTrackerPlugin from './tools/migration-tracker/index.js';
-import redirectTesterPlugin from './tools/redirect-tester/index.js';
+import urlTesterPlugin from './tools/url-tester/index.js';
+import { initScheduler as initUrlTesterScheduler } from './tools/url-tester/scheduler.js';
 
 const fastify = Fastify({ logger: true });
 
 async function start() {
+  await scheduler.init();
+  initUrlTesterScheduler();
+
   await fastify.register(cors, { origin: true });
   await fastify.register(websocket);
 
@@ -24,9 +29,14 @@ async function start() {
   await fastify.register(pageDiffPlugin, { prefix: '/api/tools/page-diff' });
   await fastify.register(deadLinkCheckerPlugin, { prefix: '/api/tools/dead-link-checker' });
   await fastify.register(migrationTrackerPlugin, { prefix: '/api/tools/migration-tracker' });
-  await fastify.register(redirectTesterPlugin, { prefix: '/api/tools/redirect-tester' });
+  await fastify.register(urlTesterPlugin, { prefix: '/api/tools/url-tester' });
 
   fastify.get('/api/health', async () => ({ status: 'ok' }));
+
+  fastify.get('/api/config/slack', async () => {
+    const configured = !!process.env.SLACK_WEBHOOK_URL;
+    return { configured };
+  });
 
   const shutdown = async () => {
     await closeBrowser();

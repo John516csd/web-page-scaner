@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -21,33 +22,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
   Play,
   Plus,
   Trash2,
   Pencil,
   RotateCcw,
   Square,
-  ChevronDown,
 } from "lucide-react";
 import {
   DEFAULT_TEST_CASES,
-  CATEGORY_LABELS,
   GEO_COUNTRY_LABELS,
-  type RedirectTestCase,
+  type UrlTestCase,
   type GeoCountry,
 } from "../types";
 
 interface TestCaseEditorProps {
-  testCases: RedirectTestCase[];
-  onTestCasesChange: (cases: RedirectTestCase[]) => void;
+  testCases: UrlTestCase[];
+  onTestCasesChange: (cases: UrlTestCase[]) => void;
   selectedIds: Set<string>;
   onSelectedIdsChange: (ids: Set<string>) => void;
-  onRun: (cases: RedirectTestCase[]) => void;
+  onRun: (cases: UrlTestCase[]) => void;
   onStop: () => void;
   loading: boolean;
 }
@@ -61,7 +55,7 @@ export function TestCaseEditor({
   onStop,
   loading,
 }: TestCaseEditorProps) {
-  const [editingCase, setEditingCase] = useState<RedirectTestCase | null>(null);
+  const [editingCase, setEditingCase] = useState<UrlTestCase | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const toggleAll = useCallback(() => {
@@ -103,7 +97,7 @@ export function TestCaseEditor({
   );
 
   const handleSaveEdit = useCallback(
-    (updated: RedirectTestCase) => {
+    (updated: UrlTestCase) => {
       if (testCases.find((tc) => tc.id === updated.id)) {
         onTestCasesChange(
           testCases.map((tc) => (tc.id === updated.id ? updated : tc))
@@ -125,50 +119,44 @@ export function TestCaseEditor({
       id: `custom-${Date.now()}`,
       name: "",
       description: "",
-      category: "extra",
       url: "",
       expectedStatus: 200,
     });
     setEditDialogOpen(true);
   }, []);
 
-  const categories = ["viewer-request", "origin-request", "extra"] as const;
-
   return (
-    <div className="space-y-4">
+    <div>
       {/* Toolbar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              checked={
-                selectedIds.size === testCases.length && testCases.length > 0
-              }
-              onCheckedChange={toggleAll}
-            />
-            <span className="text-xs text-muted-foreground">
-              {selectedIds.size}/{testCases.length}
-            </span>
-          </div>
+      <div className="flex items-center justify-between px-1 py-1">
+        <div className="flex items-center gap-1">
+          <Checkbox
+            checked={
+              selectedIds.size === testCases.length && testCases.length > 0
+            }
+            onCheckedChange={toggleAll}
+          />
+          <span className="text-[11px] text-muted-foreground tabular-nums ml-1">
+            {selectedIds.size}/{testCases.length}
+          </span>
+          <Separator orientation="vertical" className="h-3.5 mx-1.5" />
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 text-xs"
+            className="h-6 px-1.5 text-[11px] text-muted-foreground"
             onClick={handleReset}
           >
-            <RotateCcw className="h-3 w-3 mr-1" />
-            重置
+            <RotateCcw className="h-3 w-3" />
           </Button>
           <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
             <DialogTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 text-xs"
+                className="h-6 px-1.5 text-[11px] text-muted-foreground"
                 onClick={handleAddNew}
               >
-                <Plus className="h-3 w-3 mr-1" />
-                添加
+                <Plus className="h-3 w-3" />
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
@@ -194,14 +182,14 @@ export function TestCaseEditor({
           </Dialog>
         </div>
         {loading ? (
-          <Button variant="destructive" size="sm" className="h-7" onClick={onStop}>
+          <Button variant="destructive" size="sm" className="h-6 px-2.5 text-[11px]" onClick={onStop}>
             <Square className="h-3 w-3 mr-1" />
             停止
           </Button>
         ) : (
           <Button
             size="sm"
-            className="h-7"
+            className="h-6 px-2.5 text-[11px]"
             onClick={handleRun}
             disabled={selectedIds.size === 0}
           >
@@ -211,124 +199,93 @@ export function TestCaseEditor({
         )}
       </div>
 
-      {/* Test cases grouped by category */}
-      {categories.map((cat) => {
-        const cases = testCases.filter((tc) => tc.category === cat);
-        if (cases.length === 0) return null;
-        const selectedCount = cases.filter((tc) =>
-          selectedIds.has(tc.id)
-        ).length;
-        return (
-          <Collapsible key={cat} defaultOpen>
-            <CollapsibleTrigger className="flex items-center gap-2 w-full group">
-              <div
-                className={`h-1.5 w-1.5 rounded-full shrink-0 ${
-                  cat === "viewer-request"
-                    ? "bg-sky-500"
-                    : cat === "origin-request"
-                    ? "bg-amber-500"
-                    : "bg-violet-500"
-                }`}
-              />
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {CATEGORY_LABELS[cat]}
-              </span>
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                {selectedCount}/{cases.length}
-              </Badge>
-              <ChevronDown className="h-3 w-3 ml-auto text-muted-foreground transition-transform [[data-state=open]_&]:rotate-180" />
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="mt-1.5 space-y-0.5">
-                {cases.map((tc) => (
-                  <div
-                    key={tc.id}
-                    className="group flex items-start gap-2 rounded-md border border-transparent px-2.5 py-2 transition-colors hover:bg-muted/50 hover:border-border"
+      <Separator className="my-1" />
+
+      {/* Test case list */}
+      <div>
+        {testCases.map((tc) => (
+          <div
+            key={tc.id}
+            className="group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50"
+          >
+            <Checkbox
+              checked={selectedIds.has(tc.id)}
+              onCheckedChange={() => toggleOne(tc.id)}
+              className="shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[13px] font-medium truncate">
+                  {tc.name}
+                </span>
+                <Badge
+                  variant="outline"
+                  className={`text-[10px] px-1 py-0 shrink-0 ${
+                    tc.expectedStatus === 200
+                      ? "border-emerald-300 text-emerald-600"
+                      : tc.expectedStatus === 301
+                      ? "border-blue-300 text-blue-600"
+                      : "border-amber-300 text-amber-600"
+                  }`}
+                >
+                  {tc.expectedStatus}
+                </Badge>
+                {tc.country && (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] px-1 py-0 shrink-0 border-orange-200 text-orange-600"
                   >
-                    <Checkbox
-                      checked={selectedIds.has(tc.id)}
-                      onCheckedChange={() => toggleOne(tc.id)}
-                      className="mt-0.5 shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[13px] font-medium truncate">
-                          {tc.name}
-                        </span>
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] px-1 py-0 shrink-0 ${
-                            tc.expectedStatus === 200
-                              ? "border-emerald-300 text-emerald-600"
-                              : tc.expectedStatus === 301
-                              ? "border-blue-300 text-blue-600"
-                              : "border-amber-300 text-amber-600"
-                          }`}
-                        >
-                          {tc.expectedStatus}
-                        </Badge>
-                        {tc.country && (
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] px-1 py-0 shrink-0 border-orange-200 text-orange-600"
-                          >
-                            {tc.country}
-                          </Badge>
-                        )}
-                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-5 w-5"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingCase({ ...tc });
-                              setEditDialogOpen(true);
-                            }}
-                          >
-                            <Pencil className="h-2.5 w-2.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-5 w-5 text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(tc.id);
-                            }}
-                          >
-                            <Trash2 className="h-2.5 w-2.5" />
-                          </Button>
-                        </div>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground font-mono truncate mt-0.5">
-                        {new URL(tc.url).pathname}
-                        {tc.expectedRedirectUrl && (
-                          <>
-                            <span className="text-muted-foreground/40 mx-1">
-                              →
-                            </span>
-                            {(() => {
-                              try {
-                                const u = new URL(tc.expectedRedirectUrl);
-                                return u.host !== new URL(tc.url).host
-                                  ? u.host + u.pathname
-                                  : u.pathname;
-                              } catch {
-                                return tc.expectedRedirectUrl;
-                              }
-                            })()}
-                          </>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                    {tc.country}
+                  </Badge>
+                )}
               </div>
-            </CollapsibleContent>
-          </Collapsible>
-        );
-      })}
+              <p className="text-[10px] text-muted-foreground font-mono truncate mt-0.5">
+                {new URL(tc.url).pathname}
+                {tc.expectedRedirectUrl && (
+                  <>
+                    <span className="text-muted-foreground/40 mx-1">→</span>
+                    {(() => {
+                      try {
+                        const u = new URL(tc.expectedRedirectUrl);
+                        return u.host !== new URL(tc.url).host
+                          ? u.host + u.pathname
+                          : u.pathname;
+                      } catch {
+                        return tc.expectedRedirectUrl;
+                      }
+                    })()}
+                  </>
+                )}
+              </p>
+            </div>
+            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingCase({ ...tc });
+                  setEditDialogOpen(true);
+                }}
+              >
+                <Pencil className="h-2.5 w-2.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5 text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(tc.id);
+                }}
+              >
+                <Trash2 className="h-2.5 w-2.5" />
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -338,11 +295,11 @@ function TestCaseForm({
   onSave,
   onCancel,
 }: {
-  testCase: RedirectTestCase;
-  onSave: (tc: RedirectTestCase) => void;
+  testCase: UrlTestCase;
+  onSave: (tc: UrlTestCase) => void;
   onCancel: () => void;
 }) {
-  const [form, setForm] = useState<RedirectTestCase>(testCase);
+  const [form, setForm] = useState<UrlTestCase>(testCase);
   const [cookieStr, setCookieStr] = useState(
     testCase.cookies
       ? Object.entries(testCase.cookies)
@@ -384,36 +341,13 @@ function TestCaseForm({
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label className="text-xs mb-1">名称</Label>
-          <Input
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="测试用例名称"
-          />
-        </div>
-        <div>
-          <Label className="text-xs mb-1">分类</Label>
-          <Select
-            value={form.category}
-            onValueChange={(v) =>
-              setForm({
-                ...form,
-                category: v as RedirectTestCase["category"],
-              })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="viewer-request">Viewer Request</SelectItem>
-              <SelectItem value="origin-request">Origin Request</SelectItem>
-              <SelectItem value="extra">额外测试</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div>
+        <Label className="text-xs mb-1">名称</Label>
+        <Input
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          placeholder="测试用例名称"
+        />
       </div>
       <div>
         <Label className="text-xs mb-1">URL</Label>

@@ -1,10 +1,10 @@
 import { ProxyAgent, fetch as undiciFetch } from 'undici';
-import type { RedirectTestCase, RedirectTestResult } from './types.js';
+import type { UrlTestCase, UrlTestResult } from './types.js';
 
 export async function executeTest(
-  testCase: RedirectTestCase,
+  testCase: UrlTestCase,
   proxyUrl?: string
-): Promise<RedirectTestResult> {
+): Promise<UrlTestResult> {
   const start = Date.now();
 
   try {
@@ -40,7 +40,7 @@ export async function executeTest(
       responseHeaders[key] = value;
     });
 
-    const result: RedirectTestResult = {
+    const result: UrlTestResult = {
       testCase,
       actualStatus,
       actualRedirectUrl: locationHeader,

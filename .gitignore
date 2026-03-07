@@ -11,3 +11,6 @@ node_modules
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Runtime data
+backend/data/schedules.json

@@ -32,10 +32,10 @@ export const tools: ToolMeta[] = [
     href: "/tools/migration-tracker",
   },
   {
-    id: "redirect-tester",
-    name: "Redirect Tester",
-    description: "CloudFront / Lambda@Edge 重定向规则批量测试与验证",
+    id: "url-tester",
+    name: "URL Tester",
+    description: "URL 批量测试与验证（状态码、重定向、Headers）",
     icon: Route,
-    href: "/tools/redirect-tester",
+    href: "/tools/url-tester",
   },
 ];

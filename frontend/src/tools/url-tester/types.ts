@@ -16,11 +16,10 @@ export const GEO_COUNTRY_LABELS: Record<GeoCountry, string> = {
   CA: '加拿大',
 };
 
-export interface RedirectTestCase {
+export interface UrlTestCase {
   id: string;
   name: string;
   description: string;
-  category: 'viewer-request' | 'origin-request' | 'extra';
   url: string;
   method?: 'GET' | 'HEAD';
   headers?: Record<string, string>;
@@ -31,8 +30,8 @@ export interface RedirectTestCase {
   notes?: string;
 }
 
-export interface RedirectTestResult {
-  testCase: RedirectTestCase;
+export interface UrlTestResult {
+  testCase: UrlTestCase;
   actualStatus: number;
   actualRedirectUrl?: string;
   responseHeaders?: Record<string, string>;
@@ -43,7 +42,7 @@ export interface RedirectTestResult {
 }
 
 export interface TestBatchResult {
-  results: RedirectTestResult[];
+  results: UrlTestResult[];
   summary: {
     total: number;
     passed: number;
@@ -52,18 +51,11 @@ export interface TestBatchResult {
   };
 }
 
-export const CATEGORY_LABELS: Record<RedirectTestCase['category'], string> = {
-  'viewer-request': 'Viewer Request (CloudFront Functions)',
-  'origin-request': 'Origin Request (Lambda@Edge)',
-  'extra': '额外抽样测试',
-};
-
-export const DEFAULT_TEST_CASES: RedirectTestCase[] = [
+export const DEFAULT_TEST_CASES: UrlTestCase[] = [
   {
     id: 'vr-1',
     name: '日本用户访问首页 — 不重定向',
     description: '日语用户直接返回首页内容（HTTP 200），不发生语言重定向',
-    category: 'viewer-request',
     url: 'https://www.notta.ai/',
     expectedStatus: 200,
     country: 'JP',
@@ -72,7 +64,6 @@ export const DEFAULT_TEST_CASES: RedirectTestCase[] = [
     id: 'vr-2',
     name: '美国用户访问首页 — 302 到 /en/',
     description: '美国 IP 访问首页应 302 重定向到 /en/',
-    category: 'viewer-request',
     url: 'https://www.notta.ai/',
     expectedStatus: 302,
     expectedRedirectUrl: 'https://www.notta.ai/en/',
@@ -82,7 +73,6 @@ export const DEFAULT_TEST_CASES: RedirectTestCase[] = [
     id: 'vr-3',
     name: 'Cookie 语言优先于国家 — 302 到 /es/',
     description: '设置 selected-lang=es cookie 后应重定向到 /es/',
-    category: 'viewer-request',
     url: 'https://www.notta.ai/',
     cookies: { 'selected-lang': 'es' },
     expectedStatus: 302,
@@ -92,7 +82,6 @@ export const DEFAULT_TEST_CASES: RedirectTestCase[] = [
     id: 'vr-4',
     name: 'Googlebot 访问首页 — 不重定向',
     description: 'Googlebot UA 直接返回首页内容（HTTP 200）',
-    category: 'viewer-request',
     url: 'https://www.notta.ai/',
     headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
@@ -103,7 +92,6 @@ export const DEFAULT_TEST_CASES: RedirectTestCase[] = [
     id: 'vr-12',
     name: '不支持的语言国家 — fallback 到 /en/',
     description: '俄语 Accept-Language 不在支持列表中，回退到 /en/',
-    category: 'viewer-request',
     url: 'https://www.notta.ai/',
     headers: { 'Accept-Language': 'ru' },
     expectedStatus: 302,
@@ -114,7 +102,6 @@ export const DEFAULT_TEST_CASES: RedirectTestCase[] = [
     id: 'or-5',
     name: 'help.notta.ai 域名重定向',
     description: 'help.notta.ai 应 301 重定向到 support.notta.ai',
-    category: 'origin-request',
     url: 'https://help.notta.ai/some-article',
     expectedStatus: 301,
     expectedRedirectUrl: 'https://support.notta.ai/hc/en-us',
@@ -124,7 +111,6 @@ export const DEFAULT_TEST_CASES: RedirectTestCase[] = [
     id: 'or-7',
     name: '精确路径重定向',
     description: '/en/audio-to-text 应 301 重定向到 /en/tools/audio-to-text-converter',
-    category: 'origin-request',
     url: 'https://www.notta.ai/en/audio-to-text',
     expectedStatus: 301,
     expectedRedirectUrl: 'https://www.notta.ai/en/tools/audio-to-text-converter',
@@ -133,7 +119,6 @@ export const DEFAULT_TEST_CASES: RedirectTestCase[] = [
     id: 'or-8',
     name: '外部链接重定向',
     description: '/request 应 301 重定向到 support.notta.ai 的文章',
-    category: 'origin-request',
     url: 'https://www.notta.ai/request',
     expectedStatus: 301,
     expectedRedirectUrl: 'https://support.notta.ai/hc/ja/articles/4402669737499',
@@ -142,7 +127,6 @@ export const DEFAULT_TEST_CASES: RedirectTestCase[] = [
     id: 'or-9',
     name: '前缀匹配重定向',
     description: '/article/some-blog-post 应 301 重定向到 /en/blog/some-blog-post',
-    category: 'origin-request',
     url: 'https://www.notta.ai/article/some-blog-post',
     expectedStatus: 301,
     expectedRedirectUrl: 'https://www.notta.ai/en/blog/some-blog-post',
@@ -151,7 +135,6 @@ export const DEFAULT_TEST_CASES: RedirectTestCase[] = [
     id: 'or-10',
     name: '普通页面（无重定向）',
     description: '/en/pricing 应正常返回 200',
-    category: 'origin-request',
     url: 'https://www.notta.ai/en/pricing',
     expectedStatus: 200,
   },
@@ -159,7 +142,6 @@ export const DEFAULT_TEST_CASES: RedirectTestCase[] = [
     id: 'or-11',
     name: 'Trailing slash 处理',
     description: '/en/pricing/ 的 trailing slash 被去掉，正常返回页面',
-    category: 'origin-request',
     url: 'https://www.notta.ai/en/pricing/',
     expectedStatus: 200,
   },
@@ -167,7 +149,6 @@ export const DEFAULT_TEST_CASES: RedirectTestCase[] = [
     id: 'ex-1',
     name: '多语言重定向 — 西班牙语',
     description: '/es/audio-a-texto 应 301 重定向到 /es/audio-to-text',
-    category: 'extra',
     url: 'https://www.notta.ai/es/audio-a-texto',
     expectedStatus: 301,
     expectedRedirectUrl: 'https://www.notta.ai/es/audio-to-text',
@@ -176,7 +157,6 @@ export const DEFAULT_TEST_CASES: RedirectTestCase[] = [
     id: 'ex-2',
     name: '多语言重定向 — 德语',
     description: '/de/audio-transkribieren 应 301 重定向到 /de/audio-to-text',
-    category: 'extra',
     url: 'https://www.notta.ai/de/audio-transkribieren',
     expectedStatus: 301,
     expectedRedirectUrl: 'https://www.notta.ai/de/audio-to-text',
@@ -185,7 +165,6 @@ export const DEFAULT_TEST_CASES: RedirectTestCase[] = [
     id: 'ex-3',
     name: 'notta-brain 重定向',
     description: '/notta-brain 应 301 重定向到 /brain',
-    category: 'extra',
     url: 'https://www.notta.ai/notta-brain',
     expectedStatus: 301,
     expectedRedirectUrl: 'https://www.notta.ai/brain',
@@ -194,7 +173,6 @@ export const DEFAULT_TEST_CASES: RedirectTestCase[] = [
     id: 'ex-4',
     name: 'youtube-to-text 重定向',
     description: '/en/youtube-to-text 应 301 重定向到 /en/tools/youtube-transcript-generator',
-    category: 'extra',
     url: 'https://www.notta.ai/en/youtube-to-text',
     expectedStatus: 301,
     expectedRedirectUrl: 'https://www.notta.ai/en/tools/youtube-transcript-generator',
@@ -203,7 +181,6 @@ export const DEFAULT_TEST_CASES: RedirectTestCase[] = [
     id: 'ex-5',
     name: 'changelog 重定向',
     description: '/changelog 应 301 重定向到 /hub/changelog',
-    category: 'extra',
     url: 'https://www.notta.ai/changelog',
     expectedStatus: 301,
     expectedRedirectUrl: 'https://www.notta.ai/hub/changelog',
