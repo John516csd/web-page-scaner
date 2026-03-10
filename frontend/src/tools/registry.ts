@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { FileSearch, Link2Off, GitMerge, Route } from "lucide-react";
+import { FileSearch, Link2Off, GitMerge, Route, MonitorCheck } from "lucide-react";
 
 export interface ToolMeta {
   id: string;
@@ -37,5 +37,12 @@ export const tools: ToolMeta[] = [
     description: "URL 批量测试与验证（状态码、重定向、Headers）",
     icon: Route,
     href: "/tools/url-tester",
+  },
+  {
+    id: "e2e-tester",
+    name: "E2E Tester",
+    description: "Playwright 端到端功能测试，支持脚本编辑与定时执行",
+    icon: MonitorCheck,
+    href: "/tools/e2e-tester",
   },
 ];

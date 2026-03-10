@@ -4,6 +4,11 @@
   "scripts": {
     "dev": "concurrently -n fe,be -c blue,green \"pnpm --filter frontend dev\" \"pnpm --filter backend dev\"",
     "build": "pnpm --filter frontend build && pnpm --filter backend build",
+    "start": "pnpm build && pm2 start ecosystem.config.cjs",
+    "stop": "pm2 stop ecosystem.config.cjs",
+    "restart": "pnpm build && pm2 restart ecosystem.config.cjs",
+    "logs": "pm2 logs",
+    "status": "pm2 status",
     "lint": "pnpm --filter frontend lint"
   },
   "devDependencies": {

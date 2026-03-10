@@ -25,7 +25,7 @@ export function useUrlTester() {
 
   const wsRef = useRef<WebSocket | null>(null);
 
-  const run = useCallback(async (testCases: UrlTestCase[], proxy?: string, notifySlack?: boolean) => {
+  const run = useCallback(async (testCases: UrlTestCase[], proxy?: string, notifySlack?: boolean, collectionName?: string) => {
     setLoading(true);
     setResults([]);
     setSummary(null);
@@ -37,7 +37,7 @@ export function useUrlTester() {
     try {
       const { taskId } = await apiPost<{ taskId: string }>(
         "/tools/url-tester/run",
-        { testCases, proxy: proxy || undefined, notifySlack }
+        { testCases, proxy: proxy || undefined, notifySlack, collectionName }
       );
 
       const ws = createWebSocket(taskId);

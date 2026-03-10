@@ -18,43 +18,36 @@ import {
   CheckCircle2,
   XCircle,
   ChevronDown,
-  Copy,
-  Check,
   Loader2,
   Circle,
+  Image as ImageIcon,
+  Terminal,
 } from "lucide-react";
-import type {
-  UrlTestResult,
-  TestBatchResult,
-  UrlTestCase,
-} from "../types";
+import type { E2ETestResult, E2EBatchResult, E2ETestCase } from "../types";
 
 type TestItemStatus = "pending" | "running" | "done";
 
-interface TestResultsProps {
-  testCases: UrlTestCase[];
-  results: UrlTestResult[];
-  summary: TestBatchResult["summary"] | null;
+interface E2ETestResultsProps {
+  testCases: E2ETestCase[];
+  results: E2ETestResult[];
+  summary: E2EBatchResult["summary"] | null;
   loading: boolean;
   currentTest: string | null;
   progress: { current: number; total: number } | null;
 }
 
-export function TestResults({
+export function E2ETestResults({
   testCases,
   results,
   summary,
   loading,
   currentTest,
   progress,
-}: TestResultsProps) {
-  const [detailResult, setDetailResult] = useState<UrlTestResult | null>(
-    null
-  );
-  const [copiedCurl, setCopiedCurl] = useState(false);
+}: E2ETestResultsProps) {
+  const [detailResult, setDetailResult] = useState<E2ETestResult | null>(null);
 
   const resultMap = useMemo(() => {
-    const map = new Map<string, UrlTestResult>();
+    const map = new Map<string, E2ETestResult>();
     results.forEach((r) => map.set(r.testCase.id, r));
     return map;
   }, [results]);
@@ -64,26 +57,6 @@ export function TestResults({
     const tc = testCases.find((t) => currentTest.includes(t.name));
     return tc?.id ?? null;
   }, [currentTest, loading, testCases]);
-
-  const copyCurl = (tc: UrlTestCase) => {
-    let cmd = `curl -s -o /dev/null -w "%{http_code} %{redirect_url}"`;
-    if (tc.headers) {
-      Object.entries(tc.headers).forEach(([k, v]) => {
-        if (k === "User-Agent") cmd += ` -A "${v}"`;
-        else cmd += ` -H "${k}: ${v}"`;
-      });
-    }
-    if (tc.cookies) {
-      const cookieStr = Object.entries(tc.cookies)
-        .map(([k, v]) => `${k}=${v}`)
-        .join("; ");
-      cmd += ` -b "${cookieStr}"`;
-    }
-    cmd += ` ${tc.url}`;
-    navigator.clipboard.writeText(cmd);
-    setCopiedCurl(true);
-    setTimeout(() => setCopiedCurl(false), 2000);
-  };
 
   const getItemStatus = (id: string): TestItemStatus => {
     if (resultMap.has(id)) return "done";
@@ -136,20 +109,27 @@ export function TestResults({
                   : `${summary.failed} 项失败`}
               </div>
               <div className="text-[10px] text-muted-foreground">
-                {summary.passed}/{summary.total} · {passRate}% · {(summary.duration / 1000).toFixed(1)}s
+                {summary.passed}/{summary.total} · {passRate}% ·{" "}
+                {(summary.duration / 1000).toFixed(1)}s
               </div>
             </div>
             <div className="flex gap-1.5 shrink-0">
               <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 px-2 py-0.5">
-                <span className="text-sm font-bold font-mono">{summary.passed}</span>
+                <span className="text-sm font-bold font-mono">
+                  {summary.passed}
+                </span>
                 <span className="text-[10px]">通过</span>
               </span>
-              <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 ${
-                summary.failed > 0
-                  ? "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400"
-                  : "bg-muted text-muted-foreground"
-              }`}>
-                <span className="text-sm font-bold font-mono">{summary.failed}</span>
+              <span
+                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 ${
+                  summary.failed > 0
+                    ? "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                <span className="text-sm font-bold font-mono">
+                  {summary.failed}
+                </span>
                 <span className="text-[10px]">失败</span>
               </span>
             </div>
@@ -189,17 +169,27 @@ export function TestResults({
                 >
                   {tc.name}
                 </span>
-                {result && !result.passed && result.failureReason && (
+                {result && !result.passed && result.error && (
                   <p className="text-[10px] text-red-500 truncate">
-                    {result.failureReason}
+                    {result.error}
                   </p>
                 )}
               </div>
               {result && (
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <StatusBadge status={result.actualStatus} />
+                  <span
+                    className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-mono font-semibold ${
+                      result.passed
+                        ? "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
+                        : "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800"
+                    }`}
+                  >
+                    {result.passed ? "PASS" : "FAIL"}
+                  </span>
                   <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
-                    {result.durationMs}ms
+                    {result.durationMs >= 1000
+                      ? `${(result.durationMs / 1000).toFixed(1)}s`
+                      : `${result.durationMs}ms`}
                   </span>
                 </div>
               )}
@@ -213,7 +203,7 @@ export function TestResults({
         open={!!detailResult}
         onOpenChange={(open) => !open && setDetailResult(null)}
       >
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {detailResult?.passed ? (
@@ -225,57 +215,63 @@ export function TestResults({
             </DialogTitle>
           </DialogHeader>
           {detailResult && (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                {detailResult.testCase.description}
-              </p>
-
+            <div className="flex-1 overflow-y-auto space-y-4">
               <div className="rounded-lg border bg-muted/30 p-3 space-y-2 text-sm">
                 <DetailRow label="URL" mono>
                   {detailResult.testCase.url}
                 </DetailRow>
-                <DetailRow label="预期状态码">
-                  <StatusBadge status={detailResult.testCase.expectedStatus} />
+                <DetailRow label="状态">
+                  <span
+                    className={
+                      detailResult.passed
+                        ? "text-emerald-600 font-medium"
+                        : "text-red-600 font-medium"
+                    }
+                  >
+                    {detailResult.passed ? "通过" : "失败"}
+                  </span>
                 </DetailRow>
-                <DetailRow label="实际状态码">
-                  <StatusBadge status={detailResult.actualStatus} />
+                <DetailRow label="耗时">
+                  {detailResult.durationMs >= 1000
+                    ? `${(detailResult.durationMs / 1000).toFixed(1)}s`
+                    : `${detailResult.durationMs}ms`}
                 </DetailRow>
-                {(detailResult.testCase.expectedRedirectUrl ||
-                  detailResult.actualRedirectUrl) && (
-                  <>
-                    <DetailRow label="预期重定向" mono>
-                      {detailResult.testCase.expectedRedirectUrl || (
-                        <span className="text-muted-foreground italic">无</span>
-                      )}
-                    </DetailRow>
-                    <DetailRow label="实际重定向" mono>
-                      {detailResult.actualRedirectUrl || (
-                        <span className="text-muted-foreground italic">
-                          无 (未返回 Location 头)
-                        </span>
-                      )}
-                    </DetailRow>
-                  </>
-                )}
-                {detailResult.usedNode && (
-                  <DetailRow label="代理节点">
-                    <span className="text-orange-600">
-                      {detailResult.usedNode}
-                    </span>
-                  </DetailRow>
-                )}
-                <DetailRow label="耗时">{detailResult.durationMs}ms</DetailRow>
-                {!detailResult.passed && detailResult.failureReason && (
-                  <DetailRow label="失败原因">
-                    <span className="text-red-500">
-                      {detailResult.failureReason}
-                    </span>
+                {detailResult.error && (
+                  <DetailRow label="错误">
+                    <span className="text-red-500">{detailResult.error}</span>
                   </DetailRow>
                 )}
               </div>
 
-              {detailResult.responseHeaders &&
-                Object.keys(detailResult.responseHeaders).length > 0 && (
+              {/* Screenshot */}
+              {detailResult.screenshot && (
+                <Collapsible defaultOpen>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-muted-foreground"
+                    >
+                      <ImageIcon className="h-3 w-3 mr-1" />
+                      <ChevronDown className="h-3 w-3 mr-1" />
+                      失败截图
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="rounded-lg border overflow-hidden mt-1">
+                      <img
+                        src={`data:image/png;base64,${detailResult.screenshot}`}
+                        alt="Failure screenshot"
+                        className="w-full"
+                      />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+
+              {/* Console logs */}
+              {detailResult.consoleLogs &&
+                detailResult.consoleLogs.length > 0 && (
                   <Collapsible>
                     <CollapsibleTrigger asChild>
                       <Button
@@ -283,68 +279,27 @@ export function TestResults({
                         size="sm"
                         className="text-xs text-muted-foreground"
                       >
+                        <Terminal className="h-3 w-3 mr-1" />
                         <ChevronDown className="h-3 w-3 mr-1" />
-                        Response Headers
+                        控制台日志 ({detailResult.consoleLogs.length})
                       </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <div className="rounded-lg border bg-zinc-950 text-zinc-200 p-3 mt-1 max-h-48 overflow-y-auto font-mono text-xs leading-relaxed">
-                        {Object.entries(detailResult.responseHeaders).map(
-                          ([k, v]) => (
-                            <div key={k}>
-                              <span className="text-sky-400">{k}</span>
-                              <span className="text-zinc-500">: </span>
-                              <span className="text-zinc-300 break-all">
-                                {v}
-                              </span>
-                            </div>
-                          )
-                        )}
+                        {detailResult.consoleLogs.map((log, i) => (
+                          <div key={i} className="break-all">
+                            {log}
+                          </div>
+                        ))}
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
                 )}
-
-              <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => copyCurl(detailResult.testCase)}
-                >
-                  {copiedCurl ? (
-                    <Check className="h-3.5 w-3.5 mr-1" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5 mr-1" />
-                  )}
-                  {copiedCurl ? "已复制" : "复制 curl 命令"}
-                </Button>
-              </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-function StatusBadge({ status }: { status: number }) {
-  const variant =
-    status >= 200 && status < 300
-      ? "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
-      : status >= 300 && status < 400
-      ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800"
-      : status >= 400 && status < 500
-      ? "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
-      : status >= 500
-      ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800"
-      : "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800";
-
-  return (
-    <span
-      className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-mono font-semibold ${variant}`}
-    >
-      {status || "ERR"}
-    </span>
   );
 }
 
@@ -359,7 +314,7 @@ function DetailRow({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="text-muted-foreground text-xs w-20 shrink-0 pt-0.5 text-right">
+      <span className="text-muted-foreground text-xs w-12 shrink-0 pt-0.5 text-right">
         {label}
       </span>
       <span

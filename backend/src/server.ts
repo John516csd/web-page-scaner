@@ -9,12 +9,19 @@ import deadLinkCheckerPlugin from './tools/dead-link-checker/index.js';
 import migrationTrackerPlugin from './tools/migration-tracker/index.js';
 import urlTesterPlugin from './tools/url-tester/index.js';
 import { initScheduler as initUrlTesterScheduler } from './tools/url-tester/scheduler.js';
+import { collectionStore } from './tools/url-tester/collections.js';
+import e2eTesterPlugin from './tools/e2e-tester/index.js';
+import { initScheduler as initE2ETesterScheduler } from './tools/e2e-tester/scheduler.js';
+import { e2eCollectionStore } from './tools/e2e-tester/collections.js';
 
 const fastify = Fastify({ logger: true });
 
 async function start() {
   await scheduler.init();
+  await collectionStore.init();
+  await e2eCollectionStore.init();
   initUrlTesterScheduler();
+  initE2ETesterScheduler();
 
   await fastify.register(cors, { origin: true });
   await fastify.register(websocket);
@@ -30,6 +37,7 @@ async function start() {
   await fastify.register(deadLinkCheckerPlugin, { prefix: '/api/tools/dead-link-checker' });
   await fastify.register(migrationTrackerPlugin, { prefix: '/api/tools/migration-tracker' });
   await fastify.register(urlTesterPlugin, { prefix: '/api/tools/url-tester' });
+  await fastify.register(e2eTesterPlugin, { prefix: '/api/tools/e2e-tester' });
 
   fastify.get('/api/health', async () => ({ status: 'ok' }));
 

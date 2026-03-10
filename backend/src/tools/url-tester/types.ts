@@ -29,6 +29,7 @@ export interface RunTestsRequest {
   testCases: UrlTestCase[];
   proxy?: string;
   notifySlack?: boolean;
+  collectionName?: string;
 }
 
 export interface RunTestsResponse {

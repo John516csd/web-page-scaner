@@ -37,13 +37,19 @@ export interface TaskCancelledEvent {
   type: 'cancelled';
 }
 
+export interface TaskSlackSentEvent {
+  type: 'slack_sent';
+  message: string;
+}
+
 export type TaskEvent =
   | TaskProgressEvent
   | TaskCompleteEvent
   | TaskErrorEvent
   | BatchProgressEvent
   | BatchCompleteEvent
-  | TaskCancelledEvent;
+  | TaskCancelledEvent
+  | TaskSlackSentEvent;
 
 export type TaskHandler = (
   taskId: string,

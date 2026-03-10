@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, ReactNode } from "react";
+import { useState, useCallback, useEffect, ReactNode } from "react";
 import { Clock, Play, Save, CalendarClock, History, Filter, Timer } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { Button } from "./ui/button";
@@ -9,7 +9,6 @@ import { Label } from "./ui/label";
 import { Badge } from "./ui/badge";
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -36,6 +35,7 @@ interface SchedulerPanelProps<T = unknown> {
   onSave: (cron: string, enabled: boolean) => Promise<void>;
   onRunNow: () => Promise<void>;
 
+  collectionName?: string;
   filterSection?: ReactNode;
   totalCases?: number;
   filteredCases?: number;
@@ -49,6 +49,7 @@ export function SchedulerPanel<T = unknown>({
   config,
   onSave,
   onRunNow,
+  collectionName,
   filterSection,
   totalCases,
   filteredCases,
@@ -59,18 +60,21 @@ export function SchedulerPanel<T = unknown>({
   const [localCron, setLocalCron] = useState(config?.cron || "0 9 * * 1-5");
   const [localEnabled, setLocalEnabled] = useState(config?.enabled || false);
 
-  useState(() => {
+  useEffect(() => {
     if (config) {
       setLocalCron(config.cron);
       setLocalEnabled(config.enabled);
+    } else {
+      setLocalCron("0 9 * * 1-5");
+      setLocalEnabled(false);
     }
-  });
+  }, [config]);
 
   const handleSave = useCallback(async () => {
     await onSave(localCron, localEnabled);
   }, [localCron, localEnabled, onSave]);
 
-  const hasChanges = config && (config.cron !== localCron || config.enabled !== localEnabled);
+  const hasChanges = !config || config.cron !== localCron || config.enabled !== localEnabled;
 
   return (
     <Drawer direction="right">
@@ -92,39 +96,37 @@ export function SchedulerPanel<T = unknown>({
 
       <DrawerContent className="h-full max-h-screen">
         <div className="flex flex-col h-full">
-          <DrawerHeader className="border-b px-6 py-4 shrink-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10">
+          <DrawerHeader className="border-b px-6 py-4 shrink-0 space-y-3">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10 shrink-0">
                   <CalendarClock className="h-4.5 w-4.5 text-primary" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <DrawerTitle className="text-base">定时任务</DrawerTitle>
-                  <DrawerDescription className="text-xs">
-                    配置自动化运行计划
+                  <DrawerDescription className="text-xs truncate">
+                    {collectionName ? `集合：${collectionName}` : "配置自动化运行计划"}
                   </DrawerDescription>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 shrink-0">
                 {config?.enabled && (
-                  <Badge variant="outline" className="text-emerald-600 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 text-xs">
+                  <Badge variant="outline" className="text-emerald-600 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 text-xs shrink-0">
                     运行中
                   </Badge>
                 )}
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="schedule-enabled"
-                    checked={localEnabled}
-                    onCheckedChange={setLocalEnabled}
-                    disabled={saving}
-                  />
-                  <Label
-                    htmlFor="schedule-enabled"
-                    className="text-xs text-muted-foreground cursor-pointer"
-                  >
-                    {localEnabled ? "已启用" : "未启用"}
-                  </Label>
-                </div>
+                <Switch
+                  id="schedule-enabled"
+                  checked={localEnabled}
+                  onCheckedChange={setLocalEnabled}
+                  disabled={saving}
+                />
+                <Label
+                  htmlFor="schedule-enabled"
+                  className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap"
+                >
+                  {localEnabled ? "已启用" : "未启用"}
+                </Label>
               </div>
             </div>
           </DrawerHeader>

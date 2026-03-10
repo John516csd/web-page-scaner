@@ -41,6 +41,15 @@ export interface UrlTestResult {
   usedNode?: string;
 }
 
+export interface TestCollection {
+  id: string;
+  name: string;
+  description?: string;
+  testCases: UrlTestCase[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface TestBatchResult {
   results: UrlTestResult[];
   summary: {

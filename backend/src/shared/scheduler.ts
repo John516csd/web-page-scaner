@@ -1,4 +1,4 @@
-import cron from 'node-cron';
+import cron, { type ScheduledTask } from 'node-cron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,7 +24,7 @@ type JobHandler = (job: ScheduledJob) => Promise<{ success: boolean; summary?: u
 
 class SchedulerClass {
   private jobs: Map<string, ScheduledJob> = new Map();
-  private tasks: Map<string, cron.ScheduledTask> = new Map();
+  private tasks: Map<string, ScheduledTask> = new Map();
   private handlers: Map<string, JobHandler> = new Map();
   private initialized = false;
 
@@ -93,7 +93,7 @@ class SchedulerClass {
           await this.saveJobs();
         }
       },
-      { scheduled: false }
+      { scheduled: false } as Parameters<typeof cron.schedule>[2]
     );
 
     this.tasks.set(job.id, task);

@@ -28,9 +28,9 @@ import {
   Pencil,
   RotateCcw,
   Square,
+  Save,
 } from "lucide-react";
 import {
-  DEFAULT_TEST_CASES,
   GEO_COUNTRY_LABELS,
   type UrlTestCase,
   type GeoCountry,
@@ -44,6 +44,10 @@ interface TestCaseEditorProps {
   onRun: (cases: UrlTestCase[]) => void;
   onStop: () => void;
   loading: boolean;
+  dirty?: boolean;
+  saving?: boolean;
+  onSave?: () => void;
+  onReset?: () => void;
 }
 
 export function TestCaseEditor({
@@ -54,6 +58,10 @@ export function TestCaseEditor({
   onRun,
   onStop,
   loading,
+  dirty = false,
+  saving = false,
+  onSave,
+  onReset,
 }: TestCaseEditorProps) {
   const [editingCase, setEditingCase] = useState<UrlTestCase | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -82,9 +90,8 @@ export function TestCaseEditor({
   }, [testCases, selectedIds, onRun]);
 
   const handleReset = useCallback(() => {
-    onTestCasesChange(DEFAULT_TEST_CASES);
-    onSelectedIdsChange(new Set(DEFAULT_TEST_CASES.map((tc) => tc.id)));
-  }, [onTestCasesChange, onSelectedIdsChange]);
+    if (onReset) onReset();
+  }, [onReset]);
 
   const handleDelete = useCallback(
     (id: string) => {
@@ -128,7 +135,7 @@ export function TestCaseEditor({
   return (
     <div>
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-1 py-1">
+      <div className="flex items-center justify-between px-1 py-1.5 sticky top-0 z-10 bg-card border-b border-border/50">
         <div className="flex items-center gap-1">
           <Checkbox
             checked={
@@ -140,14 +147,30 @@ export function TestCaseEditor({
             {selectedIds.size}/{testCases.length}
           </span>
           <Separator orientation="vertical" className="h-3.5 mx-1.5" />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 px-1.5 text-[11px] text-muted-foreground"
-            onClick={handleReset}
-          >
-            <RotateCcw className="h-3 w-3" />
-          </Button>
+          {onReset && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-1.5 text-[11px] text-muted-foreground"
+              onClick={handleReset}
+              disabled={!dirty}
+              title="重置为已保存版本"
+            >
+              <RotateCcw className="h-3 w-3" />
+            </Button>
+          )}
+          {onSave && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-6 px-1.5 text-[11px] ${dirty ? "text-primary" : "text-muted-foreground"}`}
+              onClick={onSave}
+              disabled={!dirty || saving}
+              title="保存到集合"
+            >
+              <Save className="h-3 w-3" />
+            </Button>
+          )}
           <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
             <DialogTrigger asChild>
               <Button
@@ -203,88 +226,99 @@ export function TestCaseEditor({
 
       {/* Test case list */}
       <div>
-        {testCases.map((tc) => (
-          <div
-            key={tc.id}
-            className="group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50"
-          >
-            <Checkbox
-              checked={selectedIds.has(tc.id)}
-              onCheckedChange={() => toggleOne(tc.id)}
-              className="shrink-0"
-            />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[13px] font-medium truncate">
-                  {tc.name}
-                </span>
-                <Badge
-                  variant="outline"
-                  className={`text-[10px] px-1 py-0 shrink-0 ${
-                    tc.expectedStatus === 200
-                      ? "border-emerald-300 text-emerald-600"
-                      : tc.expectedStatus === 301
-                      ? "border-blue-300 text-blue-600"
-                      : "border-amber-300 text-amber-600"
-                  }`}
-                >
-                  {tc.expectedStatus}
-                </Badge>
-                {tc.country && (
+        {testCases.length === 0 ? (
+          <div className="py-8 text-center">
+            <p className="text-xs text-muted-foreground">
+              此集合尚无测试用例，点击 + 添加
+            </p>
+          </div>
+        ) : (
+          testCases.map((tc) => (
+            <div
+              key={tc.id}
+              className="group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50"
+            >
+              <Checkbox
+                checked={selectedIds.has(tc.id)}
+                onCheckedChange={() => toggleOne(tc.id)}
+                className="shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[13px] font-medium truncate">
+                    {tc.name}
+                  </span>
                   <Badge
                     variant="outline"
-                    className="text-[10px] px-1 py-0 shrink-0 border-orange-200 text-orange-600"
+                    className={`text-[10px] px-1 py-0 shrink-0 ${
+                      tc.expectedStatus === 200
+                        ? "border-emerald-300 text-emerald-600"
+                        : tc.expectedStatus === 301
+                        ? "border-blue-300 text-blue-600"
+                        : "border-amber-300 text-amber-600"
+                    }`}
                   >
-                    {tc.country}
+                    {tc.expectedStatus}
                   </Badge>
-                )}
+                  {tc.country && (
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] px-1 py-0 shrink-0 border-orange-200 text-orange-600"
+                    >
+                      {tc.country}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground font-mono truncate mt-0.5">
+                  {(() => {
+                    try { return new URL(tc.url).pathname; } catch { return tc.url; }
+                  })()}
+                  {tc.expectedRedirectUrl && (
+                    <>
+                      <span className="text-muted-foreground/40 mx-1">→</span>
+                      {(() => {
+                        try {
+                          const u = new URL(tc.expectedRedirectUrl);
+                          const o = new URL(tc.url);
+                          return u.host !== o.host
+                            ? u.host + u.pathname
+                            : u.pathname;
+                        } catch {
+                          return tc.expectedRedirectUrl;
+                        }
+                      })()}
+                    </>
+                  )}
+                </p>
               </div>
-              <p className="text-[10px] text-muted-foreground font-mono truncate mt-0.5">
-                {new URL(tc.url).pathname}
-                {tc.expectedRedirectUrl && (
-                  <>
-                    <span className="text-muted-foreground/40 mx-1">→</span>
-                    {(() => {
-                      try {
-                        const u = new URL(tc.expectedRedirectUrl);
-                        return u.host !== new URL(tc.url).host
-                          ? u.host + u.pathname
-                          : u.pathname;
-                      } catch {
-                        return tc.expectedRedirectUrl;
-                      }
-                    })()}
-                  </>
-                )}
-              </p>
+              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingCase({ ...tc });
+                    setEditDialogOpen(true);
+                  }}
+                >
+                  <Pencil className="h-2.5 w-2.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(tc.id);
+                  }}
+                >
+                  <Trash2 className="h-2.5 w-2.5" />
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEditingCase({ ...tc });
-                  setEditDialogOpen(true);
-                }}
-              >
-                <Pencil className="h-2.5 w-2.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5 text-destructive"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(tc.id);
-                }}
-              >
-                <Trash2 className="h-2.5 w-2.5" />
-              </Button>
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

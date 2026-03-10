@@ -1,0 +1,54 @@
+[
+  {
+    "id": "url-tester-redirect-tests",
+    "toolId": "url-tester",
+    "cron": "0 9 * * *",
+    "enabled": true,
+    "config": {
+      "collectionId": "redirect-tests",
+      "proxy": "http://127.0.0.1:9674",
+      "notifySlack": true
+    },
+    "lastRun": {
+      "time": "2026-03-07T15:32:49.250Z",
+      "success": true,
+      "summary": {
+        "total": 16,
+        "passed": 16,
+        "failed": 0,
+        "duration": 19374
+      }
+    }
+  },
+  {
+    "id": "url-tester-col-1772898259706-fjq7k",
+    "toolId": "url-tester",
+    "cron": "0 9 * * *",
+    "enabled": true,
+    "config": {
+      "proxy": "http://127.0.0.1:9674",
+      "notifySlack": true,
+      "collectionId": "col-1772898259706-fjq7k"
+    },
+    "lastRun": {
+      "time": "2026-03-08T03:16:46.897Z",
+      "success": true,
+      "summary": {
+        "total": 100,
+        "passed": 100,
+        "failed": 0,
+        "duration": 46284
+      }
+    }
+  },
+  {
+    "id": "e2e-tester-e2e-1772956522691-ycc0o",
+    "toolId": "e2e-tester",
+    "cron": "0 9 * * *",
+    "enabled": true,
+    "config": {
+      "notifySlack": true,
+      "collectionId": "e2e-1772956522691-ycc0o"
+    }
+  }
+]
