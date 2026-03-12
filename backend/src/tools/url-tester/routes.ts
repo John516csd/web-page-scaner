@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import net from 'node:net';
 import { taskManager } from '../../shared/task-manager.js';
 import { executeTest } from './test-executor.js';
-import { getCurrentNode, switchToCountry, switchToNode, isAvailable } from './node-switcher.js';
+import { getCurrentNode, switchToCountry, switchToNode, isAvailable, findAllNodesForCountry, healthCheckNode } from './node-switcher.js';
 import { sendSlackMessage, formatTestReport } from '../../shared/slack.js';
 import { getSchedule, getAllSchedules, updateSchedule, runScheduleNow } from './scheduler.js';
 import { collectionStore } from './collections.js';
@@ -61,12 +61,79 @@ export function registerRoutes(fastify: FastifyInstance) {
 
         const testCase = testCases[i];
         let usedNode: string | undefined;
+        let vpnFailed = false;
+        const triedNodes: string[] = [];
 
         if (canSwitch && testCase.country && testCase.country !== lastCountry) {
-          const nodeName = await switchToCountry(testCase.country);
-          if (nodeName) {
-            usedNode = nodeName;
-            lastCountry = testCase.country;
+          emit({
+            type: 'progress',
+            step: `vpn-switch-${testCase.id}`,
+            status: 'running',
+            message: `正在为 ${testCase.name} 切换到 ${testCase.country} VPN...`,
+            data: { index: i, total: testCases.length },
+          });
+
+          const allNodes = await findAllNodesForCountry(testCase.country);
+          
+          if (allNodes.length === 0) {
+            vpnFailed = true;
+            emit({
+              type: 'progress',
+              step: `vpn-switch-${testCase.id}`,
+              status: 'error',
+              message: `未找到 ${testCase.country} 的 VPN 节点`,
+              data: { index: i, total: testCases.length },
+            });
+          } else {
+            let workingNode: string | null = null;
+
+            for (const node of allNodes) {
+              emit({
+                type: 'progress',
+                step: `vpn-health-${testCase.id}`,
+                status: 'running',
+                message: `正在测试 ${node}...`,
+                data: { index: i, total: testCases.length },
+              });
+
+              await switchToNode(node);
+              const healthy = await healthCheckNode(proxy!);
+              triedNodes.push(node);
+
+              if (healthy) {
+                workingNode = node;
+                emit({
+                  type: 'progress',
+                  step: `vpn-health-${testCase.id}`,
+                  status: 'done',
+                  message: `✓ 已连接到 ${node}`,
+                  data: { index: i, total: testCases.length },
+                });
+                break;
+              } else {
+                emit({
+                  type: 'progress',
+                  step: `vpn-health-${testCase.id}`,
+                  status: 'error',
+                  message: `✗ ${node} 不可用，尝试下一个...`,
+                  data: { index: i, total: testCases.length },
+                });
+              }
+            }
+
+            if (!workingNode) {
+              vpnFailed = true;
+              emit({
+                type: 'progress',
+                step: `vpn-switch-${testCase.id}`,
+                status: 'error',
+                message: `所有 ${testCase.country} VPN 节点都不可用`,
+                data: { index: i, total: testCases.length },
+              });
+            } else {
+              usedNode = workingNode;
+              lastCountry = testCase.country;
+            }
           }
         } else if (canSwitch && testCase.country && lastCountry) {
           usedNode = lastCountry;
@@ -80,8 +147,22 @@ export function registerRoutes(fastify: FastifyInstance) {
           data: { index: i, total: testCases.length, usedNode },
         });
 
-        const result = await executeTest(testCase, proxy);
-        result.usedNode = usedNode;
+        let result;
+        if (vpnFailed) {
+          result = {
+            testCase,
+            actualStatus: 0,
+            passed: false,
+            failureReason: `VPN连接失败: 该国家的所有节点都不可用${triedNodes.length > 0 ? ` (尝试了 ${triedNodes.join(', ')})` : ''}`,
+            durationMs: 0,
+            vpnFailure: true,
+            triedNodes: triedNodes.length > 0 ? triedNodes : undefined,
+            usedNode: undefined,
+          };
+        } else {
+          result = await executeTest(testCase, proxy);
+          result.usedNode = usedNode;
+        }
 
         emit({
           type: 'progress',

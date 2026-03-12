@@ -22,6 +22,8 @@ import {
   Check,
   Loader2,
   Circle,
+  WifiOff,
+  AlertTriangle,
 } from "lucide-react";
 import type {
   UrlTestResult,
@@ -175,6 +177,8 @@ export function TestResults({
                   <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin" />
                 ) : status === "done" && result?.passed ? (
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                ) : status === "done" && !result?.passed && result?.vpnFailure ? (
+                  <WifiOff className="h-3.5 w-3.5 text-orange-500" />
                 ) : status === "done" && !result?.passed ? (
                   <XCircle className="h-3.5 w-3.5 text-red-500" />
                 ) : (
@@ -190,7 +194,7 @@ export function TestResults({
                   {tc.name}
                 </span>
                 {result && !result.passed && result.failureReason && (
-                  <p className="text-[10px] text-red-500 truncate">
+                  <p className={`text-[10px] truncate ${result.vpnFailure ? 'text-orange-500' : 'text-red-500'}`}>
                     {result.failureReason}
                   </p>
                 )}
@@ -218,6 +222,8 @@ export function TestResults({
             <DialogTitle className="flex items-center gap-2">
               {detailResult?.passed ? (
                 <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              ) : detailResult?.vpnFailure ? (
+                <WifiOff className="h-5 w-5 text-orange-500" />
               ) : (
                 <XCircle className="h-5 w-5 text-red-500" />
               )}
@@ -267,8 +273,20 @@ export function TestResults({
                 <DetailRow label="耗时">{detailResult.durationMs}ms</DetailRow>
                 {!detailResult.passed && detailResult.failureReason && (
                   <DetailRow label="失败原因">
-                    <span className="text-red-500">
+                    <span className={detailResult.vpnFailure ? "text-orange-500" : "text-red-500"}>
+                      {detailResult.vpnFailure && (
+                        <span className="inline-flex items-center gap-1 mr-1">
+                          <WifiOff className="h-3 w-3" />
+                        </span>
+                      )}
                       {detailResult.failureReason}
+                    </span>
+                  </DetailRow>
+                )}
+                {detailResult.triedNodes && detailResult.triedNodes.length > 0 && (
+                  <DetailRow label="尝试节点">
+                    <span className="text-orange-600 text-xs">
+                      {detailResult.triedNodes.join(', ')}
                     </span>
                   </DetailRow>
                 )}

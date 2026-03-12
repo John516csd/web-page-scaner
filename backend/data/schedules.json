@@ -10,13 +10,13 @@
       "notifySlack": true
     },
     "lastRun": {
-      "time": "2026-03-07T15:32:49.250Z",
+      "time": "2026-03-11T01:00:13.913Z",
       "success": true,
       "summary": {
         "total": 16,
         "passed": 16,
         "failed": 0,
-        "duration": 19374
+        "duration": 13265
       }
     }
   },
@@ -31,13 +31,13 @@
       "collectionId": "col-1772898259706-fjq7k"
     },
     "lastRun": {
-      "time": "2026-03-08T03:16:46.897Z",
+      "time": "2026-03-11T01:00:53.947Z",
       "success": true,
       "summary": {
         "total": 100,
         "passed": 100,
         "failed": 0,
-        "duration": 46284
+        "duration": 53435
       }
     }
   },
@@ -49,6 +49,16 @@
     "config": {
       "notifySlack": true,
       "collectionId": "e2e-1772956522691-ycc0o"
+    },
+    "lastRun": {
+      "time": "2026-03-11T01:01:50.248Z",
+      "success": false,
+      "summary": {
+        "total": 10,
+        "passed": 8,
+        "failed": 2,
+        "duration": 109632
+      }
     }
   }
 ]

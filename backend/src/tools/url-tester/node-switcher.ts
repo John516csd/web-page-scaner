@@ -77,6 +77,32 @@ export async function findNodeForCountry(country: GeoCountry): Promise<string | 
   }
 }
 
+export async function findAllNodesForCountry(country: GeoCountry): Promise<string[]> {
+  const keyword = COUNTRY_KEYWORDS[country];
+  if (!keyword) return [];
+
+  try {
+    const info = await getProxyGroup(PROXY_GROUPS[0]);
+    return info.all.filter((name) => name.includes(keyword));
+  } catch {
+    return [];
+  }
+}
+
+export async function healthCheckNode(proxyUrl: string): Promise<boolean> {
+  try {
+    const { fetch: undiciFetch, ProxyAgent } = await import('undici');
+    const res = await undiciFetch('https://ipinfo.io/json', {
+      dispatcher: new ProxyAgent(proxyUrl),
+      signal: AbortSignal.timeout(5000),
+    });
+    const data = await res.json() as { ip?: string };
+    return res.ok && !!data.ip;
+  } catch {
+    return false;
+  }
+}
+
 export async function switchToCountry(country: GeoCountry): Promise<string | null> {
   const nodeName = await findNodeForCountry(country);
   if (!nodeName) return null;

@@ -39,6 +39,8 @@ export interface UrlTestResult {
   failureReason?: string;
   durationMs: number;
   usedNode?: string;
+  vpnFailure?: boolean;
+  triedNodes?: string[];
 }
 
 export interface TestCollection {

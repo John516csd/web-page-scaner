@@ -1,7 +1,7 @@
 import { scheduler, type ScheduledJob } from '../../shared/scheduler.js';
 import { executeTest } from './test-executor.js';
 import { sendSlackMessage, formatTestReport } from '../../shared/slack.js';
-import { getCurrentNode, switchToCountry, switchToNode, isAvailable } from './node-switcher.js';
+import { getCurrentNode, switchToCountry, switchToNode, isAvailable, findAllNodesForCountry, healthCheckNode } from './node-switcher.js';
 import { collectionStore } from './collections.js';
 import type { UrlTestCase, UrlTestResult } from './types.js';
 
@@ -63,19 +63,56 @@ export function initScheduler() {
     try {
       for (const testCase of testCases) {
         let usedNode: string | undefined;
+        let vpnFailed = false;
+        const triedNodes: string[] = [];
 
         if (canSwitch && testCase.country && testCase.country !== lastCountry) {
-          const nodeName = await switchToCountry(testCase.country);
-          if (nodeName) {
-            usedNode = nodeName;
-            lastCountry = testCase.country;
+          const allNodes = await findAllNodesForCountry(testCase.country);
+          
+          if (allNodes.length === 0) {
+            vpnFailed = true;
+          } else {
+            let workingNode: string | null = null;
+
+            for (const node of allNodes) {
+              await switchToNode(node);
+              const healthy = await healthCheckNode(proxy!);
+              triedNodes.push(node);
+
+              if (healthy) {
+                workingNode = node;
+                break;
+              }
+            }
+
+            if (!workingNode) {
+              vpnFailed = true;
+            } else {
+              usedNode = workingNode;
+              lastCountry = testCase.country;
+            }
           }
         } else if (canSwitch && testCase.country && lastCountry) {
           usedNode = lastCountry;
         }
 
-        const result = await executeTest(testCase, proxy);
-        result.usedNode = usedNode;
+        let result;
+        if (vpnFailed) {
+          result = {
+            testCase,
+            actualStatus: 0,
+            passed: false,
+            failureReason: `VPN连接失败: 该国家的所有节点都不可用${triedNodes.length > 0 ? ` (尝试了 ${triedNodes.join(', ')})` : ''}`,
+            durationMs: 0,
+            vpnFailure: true,
+            triedNodes: triedNodes.length > 0 ? triedNodes : undefined,
+            usedNode: undefined,
+          };
+        } else {
+          result = await executeTest(testCase, proxy);
+          result.usedNode = usedNode;
+        }
+
         results.push(result);
       }
     } finally {
