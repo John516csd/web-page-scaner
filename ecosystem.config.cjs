@@ -15,8 +15,8 @@ module.exports = {
     {
       name: 'scanner-frontend',
       cwd: './frontend',
-      script: 'node_modules/.bin/next',
-      args: 'start -p 3000',
+      script: 'node_modules/next/dist/bin/next',
+      args: 'start -p 4000',
       watch: false,
       autorestart: true,
       max_restarts: 10,
