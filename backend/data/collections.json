@@ -6,20 +6,26 @@
     "testCases": [
       {
         "id": "vr-1",
-        "name": "日本用户访问首页 — 不重定向",
-        "description": "日语用户直接返回首页内容（HTTP 200），不发生语言重定向",
+        "name": "日本用户（日语浏览器）访问首页 — 不重定向",
+        "description": "日本 IP + Accept-Language 为日语，应直接返回首页（HTTP 200），不发生语言重定向",
         "url": "https://www.notta.ai/",
         "expectedStatus": 200,
-        "country": "JP"
+        "country": "JP",
+        "headers": {
+          "Accept-Language": "ja-JP,ja;q=0.9"
+        }
       },
       {
         "id": "vr-2",
-        "name": "美国用户访问首页 — 302 到 /en/",
-        "description": "美国 IP 访问首页应 302 重定向到 /en/",
+        "name": "美国用户（英语浏览器）访问首页 — 302 到 /en/",
+        "description": "美国 IP + Accept-Language 为英语，应重定向到 /en/",
         "url": "https://www.notta.ai/",
         "expectedStatus": 302,
         "expectedRedirectUrl": "https://www.notta.ai/en/",
-        "country": "US"
+        "country": "US",
+        "headers": {
+          "Accept-Language": "en-US,en;q=0.9"
+        }
       },
       {
         "id": "vr-3",
@@ -44,8 +50,8 @@
       },
       {
         "id": "vr-12",
-        "name": "不支持的语言国家 — fallback 到 /en/",
-        "description": "俄语 Accept-Language 不在支持列表中，回退到 /en/",
+        "name": "美国用户（俄语浏览器）— fallback 到 /en/",
+        "description": "美国 IP + 俄语 Accept-Language（不支持），应 fallback 到 /en/",
         "url": "https://www.notta.ai/",
         "headers": {
           "Accept-Language": "ru"
@@ -140,10 +146,65 @@
         "url": "https://www.notta.ai/changelog",
         "expectedStatus": 301,
         "expectedRedirectUrl": "https://www.notta.ai/hub/changelog"
+      },
+      {
+        "id": "vr-13",
+        "name": "美国用户（日语浏览器）— 不重定向（验证 Accept-Language 优先）",
+        "description": "美国 IP + Accept-Language 为日语，验证新方案使用 Accept-Language，应返回日语首页（HTTP 200）",
+        "url": "https://www.notta.ai/",
+        "country": "US",
+        "headers": {
+          "Accept-Language": "ja-JP,ja;q=0.9,en;q=0.8"
+        },
+        "expectedStatus": 200,
+        "notes": "关键测试：如果返回 200（日语首页），说明使用了 Accept-Language；如果重定向到 /en/，说明还在使用 IP 国家"
+      },
+      {
+        "id": "vr-14",
+        "name": "日本用户（英语浏览器）— 302 到 /en/（验证 Accept-Language 优先）",
+        "description": "日本 IP + Accept-Language 为英语，验证新方案使用 Accept-Language，应重定向到 /en/",
+        "url": "https://www.notta.ai/",
+        "country": "JP",
+        "headers": {
+          "Accept-Language": "en-US,en;q=0.9"
+        },
+        "expectedStatus": 302,
+        "expectedRedirectUrl": "https://www.notta.ai/en/",
+        "notes": "关键测试：如果重定向到 /en/，说明使用了 Accept-Language；如果返回 200（日语），说明还在使用 IP 国家"
+      },
+      {
+        "id": "vr-15",
+        "name": "西班牙语浏览器访问首页 — 302 到 /es/",
+        "description": "Accept-Language 为西班牙语，应重定向到 /es/（不需要 VPN）",
+        "url": "https://www.notta.ai/",
+        "headers": {
+          "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
+        },
+        "expectedStatus": 302,
+        "expectedRedirectUrl": "https://www.notta.ai/es/"
+      },
+      {
+        "id": "vr-16",
+        "name": "多语言偏好 — 选择第一个支持的语言",
+        "description": "Accept-Language 列表中第一个支持的语言是德语，应重定向到 /de/",
+        "url": "https://www.notta.ai/",
+        "headers": {
+          "Accept-Language": "ru,de;q=0.9,en;q=0.8"
+        },
+        "expectedStatus": 302,
+        "expectedRedirectUrl": "https://www.notta.ai/de/"
+      },
+      {
+        "id": "vr-17",
+        "name": "无 Accept-Language — fallback 到 /en/",
+        "description": "没有 Accept-Language header 时，应 fallback 到默认语言 /en/",
+        "url": "https://www.notta.ai/",
+        "expectedStatus": 302,
+        "expectedRedirectUrl": "https://www.notta.ai/en/"
       }
     ],
     "createdAt": "2026-03-07T14:58:57.794Z",
-    "updatedAt": "2026-03-07T14:58:57.795Z"
+    "updatedAt": "2026-03-16T10:26:06.504Z"
   },
   {
     "id": "col-1772898259706-fjq7k",
@@ -153,9 +214,10 @@
       {
         "id": "top100-1",
         "name": "#1 /",
-        "description": "流量 Top 1 页面，当前流量: 94604",
+        "description": "流量 Top 1 页面，当前流量: 94604。无 Accept-Language 头时会重定向到 /en/",
         "url": "https://www.notta.ai/",
-        "expectedStatus": 200
+        "expectedStatus": 302,
+        "expectedRedirectUrl": "https://www.notta.ai/en/"
       },
       {
         "id": "top100-2",
@@ -265,9 +327,10 @@
       {
         "id": "top100-17",
         "name": "#17 /es/audio-to-text",
-        "description": "流量 Top 17 页面，当前流量: 3715",
+        "description": "流量 Top 17 页面，当前流量: 3715。会 301 重定向到 /es/tools/audio-to-text-converter",
         "url": "https://www.notta.ai/es/audio-to-text",
-        "expectedStatus": 200
+        "expectedStatus": 301,
+        "expectedRedirectUrl": "https://www.notta.ai/es/tools/audio-to-text-converter"
       },
       {
         "id": "top100-18",
@@ -489,9 +552,10 @@
       {
         "id": "top100-49",
         "name": "#49 /pt/audio-to-text",
-        "description": "流量 Top 49 页面，当前流量: 1687",
+        "description": "流量 Top 49 页面，当前流量: 1687。会 301 重定向到 /pt/tools/audio-to-text-converter",
         "url": "https://www.notta.ai/pt/audio-to-text",
-        "expectedStatus": 200
+        "expectedStatus": 301,
+        "expectedRedirectUrl": "https://www.notta.ai/pt/tools/audio-to-text-converter"
       },
       {
         "id": "top100-50",
@@ -643,9 +707,10 @@
       {
         "id": "top100-71",
         "name": "#71 /id/audio-to-text",
-        "description": "流量 Top 71 页面，当前流量: 1074",
+        "description": "流量 Top 71 页面，当前流量: 1074。会 301 重定向到 /id/tools/audio-to-text-converter",
         "url": "https://www.notta.ai/id/audio-to-text",
-        "expectedStatus": 200
+        "expectedStatus": 301,
+        "expectedRedirectUrl": "https://www.notta.ai/id/tools/audio-to-text-converter"
       },
       {
         "id": "top100-72",
@@ -657,9 +722,10 @@
       {
         "id": "top100-73",
         "name": "#73 /pt/video-to-text",
-        "description": "流量 Top 73 页面，当前流量: 1067",
+        "description": "流量 Top 73 页面，当前流量: 1067。会 301 重定向到 /pt/tools/video-to-text",
         "url": "https://www.notta.ai/pt/video-to-text",
-        "expectedStatus": 200
+        "expectedStatus": 301,
+        "expectedRedirectUrl": "https://www.notta.ai/pt/tools/video-to-text"
       },
       {
         "id": "top100-74",
@@ -861,20 +927,26 @@
     "testCases": [
       {
         "id": "vr-1-test",
-        "name": "日本用户访问首页 — 不重定向",
-        "description": "日语用户直接返回首页内容（HTTP 200），不发生语言重定向",
+        "name": "日本用户（日语浏览器）访问首页 — 不重定向",
+        "description": "日本 IP + Accept-Language 为日语，应直接返回首页（HTTP 200），不发生语言重定向",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/",
         "expectedStatus": 200,
-        "country": "JP"
+        "country": "JP",
+        "headers": {
+          "Accept-Language": "ja-JP,ja;q=0.9"
+        }
       },
       {
         "id": "vr-2-test",
-        "name": "美国用户访问首页 — 302 到 /en/",
-        "description": "美国 IP 访问首页应 302 重定向到 /en/",
+        "name": "美国用户（英语浏览器）访问首页 — 302 到 /en/",
+        "description": "美国 IP + Accept-Language 为英语，应重定向到 /en/",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/",
         "expectedStatus": 302,
         "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/",
-        "country": "US"
+        "country": "US",
+        "headers": {
+          "Accept-Language": "en-US,en;q=0.9"
+        }
       },
       {
         "id": "vr-3-test",
@@ -899,8 +971,8 @@
       },
       {
         "id": "vr-12-test",
-        "name": "不支持的语言国家 — fallback 到 /en/",
-        "description": "俄语 Accept-Language 不在支持列表中，回退到 /en/",
+        "name": "美国用户（俄语浏览器）— fallback 到 /en/",
+        "description": "美国 IP + 俄语 Accept-Language（不支持），应 fallback 到 /en/",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/",
         "headers": {
           "Accept-Language": "ru"
@@ -913,7 +985,7 @@
         "id": "or-5-test",
         "name": "help.notta.ai 域名重定向",
         "description": "help.notta.ai 应 301 重定向到 support.notta.ai",
-        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/some-article",
+        "url": "https://help.notta.ai/some-article",
         "expectedStatus": 301,
         "expectedRedirectUrl": "https://support.notta.ai/hc/en-us",
         "notes": "需要 DNS 解析到同一个 CloudFront 分配"
@@ -995,10 +1067,65 @@
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/changelog",
         "expectedStatus": 301,
         "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/hub/changelog"
+      },
+      {
+        "id": "vr-13-test",
+        "name": "美国用户（日语浏览器）— 不重定向（验证 Accept-Language 优先）",
+        "description": "美国 IP + Accept-Language 为日语，验证新方案使用 Accept-Language，应返回日语首页（HTTP 200）",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/",
+        "country": "US",
+        "headers": {
+          "Accept-Language": "ja-JP,ja;q=0.9,en;q=0.8"
+        },
+        "expectedStatus": 200,
+        "notes": "关键测试：如果返回 200（日语首页），说明使用了 Accept-Language；如果重定向到 /en/，说明还在使用 IP 国家"
+      },
+      {
+        "id": "vr-14-test",
+        "name": "日本用户（英语浏览器）— 302 到 /en/（验证 Accept-Language 优先）",
+        "description": "日本 IP + Accept-Language 为英语，验证新方案使用 Accept-Language，应重定向到 /en/",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/",
+        "country": "JP",
+        "headers": {
+          "Accept-Language": "en-US,en;q=0.9"
+        },
+        "expectedStatus": 302,
+        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/",
+        "notes": "关键测试：如果重定向到 /en/，说明使用了 Accept-Language；如果返回 200（日语），说明还在使用 IP 国家"
+      },
+      {
+        "id": "vr-15-test",
+        "name": "西班牙语浏览器访问首页 — 302 到 /es/",
+        "description": "Accept-Language 为西班牙语，应重定向到 /es/（不需要 VPN）",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/",
+        "headers": {
+          "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
+        },
+        "expectedStatus": 302,
+        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/es/"
+      },
+      {
+        "id": "vr-16-test",
+        "name": "多语言偏好 — 选择第一个支持的语言",
+        "description": "Accept-Language 列表中第一个支持的语言是德语，应重定向到 /de/",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/",
+        "headers": {
+          "Accept-Language": "ru,de;q=0.9,en;q=0.8"
+        },
+        "expectedStatus": 302,
+        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/de/"
+      },
+      {
+        "id": "vr-17-test",
+        "name": "无 Accept-Language — fallback 到 /en/",
+        "description": "没有 Accept-Language header 时，应 fallback 到默认语言 /en/",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/",
+        "expectedStatus": 302,
+        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/"
       }
     ],
     "createdAt": "2026-03-16T06:21:44.018Z",
-    "updatedAt": "2026-03-16T06:21:44.019Z"
+    "updatedAt": "2026-03-16T10:26:06.504Z"
   },
   {
     "id": "test-col-1772898259706-fjq7k",
@@ -1008,9 +1135,10 @@
       {
         "id": "top100-1-test",
         "name": "#1 /",
-        "description": "流量 Top 1 页面，当前流量: 94604",
+        "description": "流量 Top 1 页面，当前流量: 94604。无 Accept-Language 头时会重定向到 /en/",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/",
-        "expectedStatus": 200
+        "expectedStatus": 302,
+        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/"
       },
       {
         "id": "top100-2-test",
@@ -1120,9 +1248,10 @@
       {
         "id": "top100-17-test",
         "name": "#17 /es/audio-to-text",
-        "description": "流量 Top 17 页面，当前流量: 3715",
+        "description": "流量 Top 17 页面，当前流量: 3715。会 301 重定向到 /es/tools/audio-to-text-converter",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/es/audio-to-text",
-        "expectedStatus": 200
+        "expectedStatus": 301,
+        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/es/tools/audio-to-text-converter"
       },
       {
         "id": "top100-18-test",
@@ -1344,9 +1473,10 @@
       {
         "id": "top100-49-test",
         "name": "#49 /pt/audio-to-text",
-        "description": "流量 Top 49 页面，当前流量: 1687",
+        "description": "流量 Top 49 页面，当前流量: 1687。会 301 重定向到 /pt/tools/audio-to-text-converter",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/pt/audio-to-text",
-        "expectedStatus": 200
+        "expectedStatus": 301,
+        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/pt/tools/audio-to-text-converter"
       },
       {
         "id": "top100-50-test",
@@ -1498,9 +1628,10 @@
       {
         "id": "top100-71-test",
         "name": "#71 /id/audio-to-text",
-        "description": "流量 Top 71 页面，当前流量: 1074",
+        "description": "流量 Top 71 页面，当前流量: 1074。会 301 重定向到 /id/tools/audio-to-text-converter",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/id/audio-to-text",
-        "expectedStatus": 200
+        "expectedStatus": 301,
+        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/id/tools/audio-to-text-converter"
       },
       {
         "id": "top100-72-test",
@@ -1512,9 +1643,10 @@
       {
         "id": "top100-73-test",
         "name": "#73 /pt/video-to-text",
-        "description": "流量 Top 73 页面，当前流量: 1067",
+        "description": "流量 Top 73 页面，当前流量: 1067。会 301 重定向到 /pt/tools/video-to-text",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/pt/video-to-text",
-        "expectedStatus": 200
+        "expectedStatus": 301,
+        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/pt/tools/video-to-text"
       },
       {
         "id": "top100-74-test",

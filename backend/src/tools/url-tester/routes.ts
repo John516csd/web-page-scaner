@@ -64,7 +64,17 @@ export function registerRoutes(fastify: FastifyInstance) {
         let vpnFailed = false;
         const triedNodes: string[] = [];
 
-        if (canSwitch && testCase.country && testCase.country !== lastCountry) {
+        // 如果测试用例需要 VPN 但 VPN 不可用
+        if (testCase.country && !canSwitch) {
+          vpnFailed = true;
+          emit({
+            type: 'progress',
+            step: `vpn-check-${testCase.id}`,
+            status: 'error',
+            message: `⚠️ ${testCase.name} 需要 ${testCase.country} VPN，但 VPN 未启用或不可用`,
+            data: { index: i, total: testCases.length },
+          });
+        } else if (canSwitch && testCase.country && testCase.country !== lastCountry) {
           emit({
             type: 'progress',
             step: `vpn-switch-${testCase.id}`,
@@ -147,21 +157,14 @@ export function registerRoutes(fastify: FastifyInstance) {
           data: { index: i, total: testCases.length, usedNode },
         });
 
-        let result;
-        if (vpnFailed) {
-          result = {
-            testCase,
-            actualStatus: 0,
-            passed: false,
-            failureReason: `VPN连接失败: 该国家的所有节点都不可用${triedNodes.length > 0 ? ` (尝试了 ${triedNodes.join(', ')})` : ''}`,
-            durationMs: 0,
-            vpnFailure: true,
-            triedNodes: triedNodes.length > 0 ? triedNodes : undefined,
-            usedNode: undefined,
-          };
-        } else {
-          result = await executeTest(testCase, proxy);
-          result.usedNode = usedNode;
+        // 执行测试，即使 VPN 失败也继续
+        const result = await executeTest(testCase, proxy);
+        result.usedNode = usedNode;
+        
+        // 如果需要 VPN 但连接失败，在结果中添加警告
+        if (vpnFailed && testCase.country) {
+          result.vpnWarning = `⚠️ 该测试需要 ${testCase.country} VPN，但连接失败${triedNodes.length > 0 ? ` (尝试了 ${triedNodes.join(', ')})` : ''}。测试结果可能不准确。`;
+          result.triedNodes = triedNodes.length > 0 ? triedNodes : undefined;
         }
 
         emit({

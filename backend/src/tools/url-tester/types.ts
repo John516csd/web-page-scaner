@@ -23,7 +23,7 @@ export interface UrlTestResult {
   failureReason?: string;
   durationMs: number;
   usedNode?: string;
-  vpnFailure?: boolean;
+  vpnWarning?: string;
   triedNodes?: string[];
 }
 

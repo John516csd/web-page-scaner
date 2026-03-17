@@ -10,13 +10,13 @@
       "collectionId": "redirect-tests"
     },
     "lastRun": {
-      "time": "2026-03-13T02:02:50.938Z",
+      "time": "2026-03-16T12:00:46.921Z",
       "success": false,
       "summary": {
-        "total": 16,
-        "passed": 0,
-        "failed": 16,
-        "duration": 169927
+        "total": 21,
+        "passed": 16,
+        "failed": 5,
+        "duration": 46400
       }
     }
   },
@@ -31,13 +31,13 @@
       "collectionId": "col-1772898259706-fjq7k"
     },
     "lastRun": {
-      "time": "2026-03-13T02:17:32.908Z",
+      "time": "2026-03-16T12:02:48.345Z",
       "success": false,
       "summary": {
         "total": 100,
-        "passed": 0,
-        "failed": 100,
-        "duration": 1052060
+        "passed": 99,
+        "failed": 1,
+        "duration": 167909
       }
     }
   },
@@ -51,8 +51,14 @@
       "collectionId": "e2e-1772956522691-ycc0o"
     },
     "lastRun": {
-      "time": "2026-03-13T02:00:00.044Z",
-      "success": false
+      "time": "2026-03-16T12:02:41.996Z",
+      "success": true,
+      "summary": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "duration": 161209
+      }
     }
   }
 ]

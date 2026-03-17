@@ -175,10 +175,10 @@ export function TestResults({
               <div className="shrink-0">
                 {status === "running" ? (
                   <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin" />
+                ) : status === "done" && result?.passed && result?.vpnWarning ? (
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
                 ) : status === "done" && result?.passed ? (
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                ) : status === "done" && !result?.passed && result?.vpnFailure ? (
-                  <WifiOff className="h-3.5 w-3.5 text-orange-500" />
                 ) : status === "done" && !result?.passed ? (
                   <XCircle className="h-3.5 w-3.5 text-red-500" />
                 ) : (
@@ -193,8 +193,13 @@ export function TestResults({
                 >
                   {tc.name}
                 </span>
+                {result && result.vpnWarning && (
+                  <p className="text-[10px] truncate text-amber-600 dark:text-amber-500">
+                    {result.vpnWarning}
+                  </p>
+                )}
                 {result && !result.passed && result.failureReason && (
-                  <p className={`text-[10px] truncate ${result.vpnFailure ? 'text-orange-500' : 'text-red-500'}`}>
+                  <p className="text-[10px] truncate text-red-500">
                     {result.failureReason}
                   </p>
                 )}
@@ -220,10 +225,10 @@ export function TestResults({
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {detailResult?.passed ? (
+              {detailResult?.passed && detailResult?.vpnWarning ? (
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+              ) : detailResult?.passed ? (
                 <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-              ) : detailResult?.vpnFailure ? (
-                <WifiOff className="h-5 w-5 text-orange-500" />
               ) : (
                 <XCircle className="h-5 w-5 text-red-500" />
               )}
@@ -271,21 +276,24 @@ export function TestResults({
                   </DetailRow>
                 )}
                 <DetailRow label="耗时">{detailResult.durationMs}ms</DetailRow>
+                {detailResult.vpnWarning && (
+                  <DetailRow label="VPN 警告">
+                    <span className="text-amber-600 dark:text-amber-500 flex items-start gap-1">
+                      <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                      <span>{detailResult.vpnWarning}</span>
+                    </span>
+                  </DetailRow>
+                )}
                 {!detailResult.passed && detailResult.failureReason && (
                   <DetailRow label="失败原因">
-                    <span className={detailResult.vpnFailure ? "text-orange-500" : "text-red-500"}>
-                      {detailResult.vpnFailure && (
-                        <span className="inline-flex items-center gap-1 mr-1">
-                          <WifiOff className="h-3 w-3" />
-                        </span>
-                      )}
+                    <span className="text-red-500">
                       {detailResult.failureReason}
                     </span>
                   </DetailRow>
                 )}
                 {detailResult.triedNodes && detailResult.triedNodes.length > 0 && (
                   <DetailRow label="尝试节点">
-                    <span className="text-orange-600 text-xs">
+                    <span className="text-muted-foreground text-xs">
                       {detailResult.triedNodes.join(', ')}
                     </span>
                   </DetailRow>
