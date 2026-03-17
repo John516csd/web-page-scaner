@@ -24,6 +24,7 @@ export interface UrlTestResult {
   durationMs: number;
   usedNode?: string;
   vpnWarning?: string;
+  vpnFailure?: boolean;
   triedNodes?: string[];
 }
 
