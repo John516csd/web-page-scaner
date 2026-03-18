@@ -18,6 +18,21 @@ export async function executeE2ETest(testCase: E2ETestCase): Promise<E2ETestResu
   const startTime = Date.now();
   const consoleLogs: string[] = [];
   let screenshot: string | undefined;
+  const screenshots: Array<{
+    step: string;
+    stepNumber?: number;
+    timestamp: number;
+    duration?: number;
+    image: string;
+    url?: string;
+    selector?: string;
+    status?: 'success' | 'warning' | 'error';
+    metadata?: {
+      elementText?: string;
+      networkRequest?: string;
+      consoleMessage?: string;
+    };
+  }> = [];
 
   const browser = await getBrowser();
   const context = await browser.newContext({
@@ -29,6 +44,44 @@ export async function executeE2ETest(testCase: E2ETestCase): Promise<E2ETestResu
     consoleLogs.push(`[${msg.type()}] ${msg.text()}`);
   });
 
+  let lastCaptureTime = startTime;
+  let stepCounter = 0;
+
+  const captureScreenshot = async (
+    stepDescription: string,
+    options?: {
+      selector?: string;
+      status?: 'success' | 'warning' | 'error';
+      metadata?: {
+        elementText?: string;
+        networkRequest?: string;
+        consoleMessage?: string;
+      };
+    }
+  ) => {
+    try {
+      const now = Date.now();
+      const buf = await page.screenshot({ type: 'png' });
+      stepCounter++;
+
+      screenshots.push({
+        step: stepDescription,
+        stepNumber: stepCounter,
+        timestamp: now - startTime,
+        duration: now - lastCaptureTime,
+        image: buf.toString('base64'),
+        url: page.url(),
+        selector: options?.selector,
+        status: options?.status || 'success',
+        metadata: options?.metadata,
+      });
+
+      lastCaptureTime = now;
+    } catch (err) {
+      consoleLogs.push(`[warn] Failed to capture screenshot for step: ${stepDescription}`);
+    }
+  };
+
   try {
     await page.goto(testCase.url, {
       waitUntil: 'domcontentloaded',
@@ -37,9 +90,9 @@ export async function executeE2ETest(testCase: E2ETestCase): Promise<E2ETestResu
 
     const assert = createAssert();
     const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-    const fn = new AsyncFunction('page', 'url', 'assert', '__assets', testCase.script);
+    const fn = new AsyncFunction('page', 'url', 'assert', '__assets', 'capture', testCase.script);
     await Promise.race([
-      fn(page, testCase.url, assert, ASSETS_DIR),
+      fn(page, testCase.url, assert, ASSETS_DIR, captureScreenshot),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error(`Script timed out after ${testCase.timeout || 60000}ms`)), testCase.timeout || 60000)
       ),
@@ -49,6 +102,7 @@ export async function executeE2ETest(testCase: E2ETestCase): Promise<E2ETestResu
       testCase,
       passed: true,
       durationMs: Date.now() - startTime,
+      screenshots: screenshots.length > 0 ? screenshots : undefined,
       consoleLogs: consoleLogs.length > 0 ? consoleLogs : undefined,
     };
   } catch (err) {
@@ -65,6 +119,7 @@ export async function executeE2ETest(testCase: E2ETestCase): Promise<E2ETestResu
       durationMs: Date.now() - startTime,
       error: err instanceof Error ? err.message : String(err),
       screenshot,
+      screenshots: screenshots.length > 0 ? screenshots : undefined,
       consoleLogs: consoleLogs.length > 0 ? consoleLogs : undefined,
     };
   } finally {

@@ -243,7 +243,119 @@ export function E2ETestResults({
                 )}
               </div>
 
-              {/* Screenshot */}
+              {/* Flow Screenshots Timeline */}
+              {detailResult.screenshots &&
+                detailResult.screenshots.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-foreground">
+                      测试流程截图
+                    </h4>
+                    <div className="relative pl-6 space-y-6">
+                      <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-border" />
+                      {detailResult.screenshots.map((shot, idx) => (
+                        <div key={idx} className="relative">
+                          <div
+                            className={`absolute -left-6 top-2 w-4 h-4 rounded-full border-2 border-background shadow-sm ${
+                              shot.status === 'error'
+                                ? 'bg-red-500'
+                                : shot.status === 'warning'
+                                ? 'bg-yellow-500'
+                                : 'bg-green-500'
+                            }`}
+                          />
+                          <div className="space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {shot.stepNumber && (
+                                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+                                      {shot.stepNumber}
+                                    </span>
+                                  )}
+                                  <span className="text-xs font-medium text-foreground">
+                                    {shot.step}
+                                  </span>
+                                </div>
+                                {shot.url && (
+                                  <div className="mt-1 text-xs text-muted-foreground font-mono truncate">
+                                    URL: {shot.url}
+                                  </div>
+                                )}
+                                {shot.selector && (
+                                  <div className="mt-0.5 text-xs text-muted-foreground font-mono truncate">
+                                    Selector: {shot.selector}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex flex-col items-end gap-0.5 shrink-0">
+                                <span className="text-xs text-muted-foreground font-mono tabular-nums">
+                                  {(shot.timestamp / 1000).toFixed(1)}s
+                                </span>
+                                {shot.duration !== undefined && (
+                                  <span className="text-[10px] text-muted-foreground/70 font-mono tabular-nums">
+                                    +{(shot.duration / 1000).toFixed(1)}s
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {shot.metadata &&
+                              (shot.metadata.elementText ||
+                                shot.metadata.networkRequest ||
+                                shot.metadata.consoleMessage) && (
+                                <div className="rounded-md bg-muted/50 px-2 py-1.5 space-y-1">
+                                  {shot.metadata.elementText && (
+                                    <div className="text-xs">
+                                      <span className="text-muted-foreground">
+                                        元素文本:{' '}
+                                      </span>
+                                      <span className="text-foreground font-mono">
+                                        {shot.metadata.elementText}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {shot.metadata.networkRequest && (
+                                    <div className="text-xs">
+                                      <span className="text-muted-foreground">
+                                        网络请求:{' '}
+                                      </span>
+                                      <span className="text-foreground font-mono">
+                                        {shot.metadata.networkRequest}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {shot.metadata.consoleMessage && (
+                                    <div className="text-xs">
+                                      <span className="text-muted-foreground">
+                                        日志:{' '}
+                                      </span>
+                                      <span className="text-foreground">
+                                        {shot.metadata.consoleMessage}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            <div className="rounded-lg border overflow-hidden bg-muted/20">
+                              <img
+                                src={`data:image/png;base64,${shot.image}`}
+                                alt={shot.step}
+                                className="w-full cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={(e) => {
+                                  const img = e.currentTarget;
+                                  if (img.requestFullscreen) {
+                                    img.requestFullscreen();
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {/* Failure Screenshot */}
               {detailResult.screenshot && (
                 <Collapsible defaultOpen>
                   <CollapsibleTrigger asChild>

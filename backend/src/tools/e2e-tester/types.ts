@@ -13,6 +13,21 @@ export interface E2ETestResult {
   durationMs: number;
   error?: string;
   screenshot?: string;
+  screenshots?: Array<{
+    step: string;
+    stepNumber?: number;
+    timestamp: number;
+    duration?: number;
+    image: string;
+    url?: string;
+    selector?: string;
+    status?: 'success' | 'warning' | 'error';
+    metadata?: {
+      elementText?: string;
+      networkRequest?: string;
+      consoleMessage?: string;
+    };
+  }>;
   consoleLogs?: string[];
 }
 
