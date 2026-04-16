@@ -5,6 +5,7 @@ export interface E2ETestCase {
   script: string;
   timeout: number;
   tags?: string[];
+  locale?: string;
 }
 
 export interface E2ETestResult {

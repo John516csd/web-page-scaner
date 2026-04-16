@@ -37,6 +37,7 @@ export async function executeE2ETest(testCase: E2ETestCase): Promise<E2ETestResu
   const browser = await getBrowser();
   const context = await browser.newContext({
     viewport: { width: 1280, height: 720 },
+    ...(testCase.locale ? { locale: testCase.locale } : {}),
   });
   const page = await context.newPage();
 
