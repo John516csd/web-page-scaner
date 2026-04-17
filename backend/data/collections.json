@@ -71,11 +71,10 @@
       },
       {
         "id": "or-7",
-        "name": "精确路径重定向",
-        "description": "/en/audio-to-text 应 301 重定向到 /en/tools/audio-to-text-converter",
+        "name": "Gone URL 测试",
+        "description": "/en/audio-to-text 应返回 410 Gone",
         "url": "https://www.notta.ai/en/audio-to-text",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://www.notta.ai/en/tools/audio-to-text-converter"
+        "expectedStatus": 410
       },
       {
         "id": "or-8",
@@ -1006,11 +1005,10 @@
       },
       {
         "id": "or-7-test",
-        "name": "精确路径重定向",
-        "description": "/en/audio-to-text 应 301 重定向到 /en/tools/audio-to-text-converter",
+        "name": "Gone URL 测试",
+        "description": "/en/audio-to-text 应返回 410 Gone",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/audio-to-text",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/tools/audio-to-text-converter"
+        "expectedStatus": 410
       },
       {
         "id": "or-8-test",
