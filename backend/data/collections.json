@@ -71,10 +71,10 @@
       },
       {
         "id": "or-7",
-        "name": "Gone URL 测试",
-        "description": "/en/audio-to-text 应返回 410 Gone",
+        "name": "正常页面测试",
+        "description": "/en/audio-to-text 已恢复为正常页面，应返回 200",
         "url": "https://www.notta.ai/en/audio-to-text",
-        "expectedStatus": 410
+        "expectedStatus": 200
       },
       {
         "id": "or-8",
@@ -1005,10 +1005,10 @@
       },
       {
         "id": "or-7-test",
-        "name": "Gone URL 测试",
-        "description": "/en/audio-to-text 应返回 410 Gone",
+        "name": "正常页面测试",
+        "description": "/en/audio-to-text 已恢复为正常页面，应返回 200",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/audio-to-text",
-        "expectedStatus": 410
+        "expectedStatus": 200
       },
       {
         "id": "or-8-test",
