@@ -81,6 +81,7 @@ console.log("🚀 开始测试: [测试名称]");
 console.log("⏳ 步骤 1/N: 加载页面...");
 await page.waitForLoadState("networkidle");
 console.log("✓ 页面加载完成");
+await dismissCookiebot();
 
 // 步骤 2: 等待关键元素
 console.log("⏳ 步骤 2/N: 等待初始化...");
@@ -110,10 +111,7 @@ const result = await Promise.race([
     .locator('[role="dialog"]')
     .waitFor({ state: "visible", timeout: 90000 })
     .then(() => "limit"),
-  page
-    .getByText(/error|failed/i)
-    .waitFor({ state: "visible", timeout: 90000 })
-    .then(() => "error"),
+  waitForAppError(90000),
 ]);
 
 if (result === "success") {
@@ -146,10 +144,7 @@ if (result === "success") {
   // 验证限制提示的正确性
 } else if (result === "error") {
   console.log("❌ 出现错误");
-  const errorText = await page
-    .getByText(/error|failed/i)
-    .first()
-    .textContent();
+  const errorText = await getAppErrorText();
   await capture("最终结果 - 错误", {
     status: "error",
     metadata: {
