@@ -1,7 +1,7 @@
 import { scheduler, type ScheduledJob } from '../../shared/scheduler.js';
 import { executeTest } from './test-executor.js';
 import { sendSlackMessage, formatTestReport } from '../../shared/slack.js';
-import { getCurrentNode, switchToCountry, switchToNode, isAvailable, findAllNodesForCountry, healthCheckNode } from './node-switcher.js';
+import { getCurrentNode, switchToNode, isAvailable, findAllNodesForCountry, healthCheckNode } from './node-switcher.js';
 import { collectionStore } from './collections.js';
 import type { UrlTestCase, UrlTestResult } from './types.js';
 
@@ -54,23 +54,24 @@ export function initScheduler() {
 
     const results: UrlTestResult[] = [];
     const startTime = Date.now();
-    const proxy = config.proxy;
+    const proxy = config.proxy?.trim() || undefined;
 
-    const canSwitch = proxy && await isAvailable();
-    const originalNode = canSwitch ? await getCurrentNode() : '';
+    const canAutoSwitch = Boolean(proxy) && await isAvailable();
+    const originalNode = canAutoSwitch ? await getCurrentNode() : '';
     let lastCountry: string | undefined;
+    let lastNode: string | undefined;
 
     try {
       for (const testCase of testCases) {
         let usedNode: string | undefined;
-        let vpnFailed = false;
+        let proxyWarning: string | undefined;
         const triedNodes: string[] = [];
 
-        if (canSwitch && testCase.country && testCase.country !== lastCountry) {
+        if (canAutoSwitch && testCase.country && testCase.country !== lastCountry) {
           const allNodes = await findAllNodesForCountry(testCase.country);
           
           if (allNodes.length === 0) {
-            vpnFailed = true;
+            proxyWarning = `未找到 ${testCase.country} 的代理节点，已继续按当前网络执行。`;
           } else {
             let workingNode: string | null = null;
 
@@ -86,37 +87,29 @@ export function initScheduler() {
             }
 
             if (!workingNode) {
-              vpnFailed = true;
+              proxyWarning = `所有 ${testCase.country} 代理节点都不可用，已继续按当前网络执行${triedNodes.length > 0 ? ` (尝试了 ${triedNodes.join(', ')})` : ''}。`;
             } else {
               usedNode = workingNode;
               lastCountry = testCase.country;
+              lastNode = workingNode;
             }
           }
-        } else if (canSwitch && testCase.country && lastCountry) {
-          usedNode = lastCountry;
+        } else if (canAutoSwitch && testCase.country && lastCountry) {
+          usedNode = lastNode;
         }
 
-        let result;
-        if (vpnFailed) {
-          result = {
-            testCase,
-            actualStatus: 0,
-            passed: false,
-            failureReason: `VPN连接失败: 该国家的所有节点都不可用${triedNodes.length > 0 ? ` (尝试了 ${triedNodes.join(', ')})` : ''}`,
-            durationMs: 0,
-            vpnFailure: true,
-            triedNodes: triedNodes.length > 0 ? triedNodes : undefined,
-            usedNode: undefined,
-          };
-        } else {
-          result = await executeTest(testCase, proxy);
-          result.usedNode = usedNode;
+        const result = await executeTest(testCase, proxy);
+        result.usedNode = usedNode;
+
+        if (proxyWarning) {
+          result.proxyWarning = proxyWarning;
+          result.triedNodes = triedNodes.length > 0 ? triedNodes : undefined;
         }
 
         results.push(result);
       }
     } finally {
-      if (canSwitch && originalNode && lastCountry) {
+      if (canAutoSwitch && originalNode && lastCountry) {
         try {
           await switchToNode(originalNode);
         } catch {

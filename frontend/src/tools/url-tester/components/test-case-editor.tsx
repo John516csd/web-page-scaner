@@ -394,7 +394,7 @@ function TestCaseForm({
       </div>
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <Label className="text-xs mb-1">模拟国家（可选）</Label>
+          <Label className="text-xs mb-1">目标国家（可选）</Label>
           <Select
             value={form.country || "__none__"}
             onValueChange={(v) =>

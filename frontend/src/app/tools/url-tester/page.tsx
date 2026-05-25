@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Wifi, WifiOff, Globe, Send, MessageSquare } from "lucide-react";
+import { Wifi, WifiOff, Globe, Send } from "lucide-react";
 import { TestCaseEditor } from "@/tools/url-tester/components/test-case-editor";
 import { TestResults } from "@/tools/url-tester/components/test-results";
 import { CollectionPicker } from "@/tools/url-tester/components/collection-picker";
@@ -56,7 +56,7 @@ export default function UrlTesterPage() {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [proxy, setProxy] = useState("http://127.0.0.1:9674");
+  const [proxy, setProxy] = useState("");
   const [proxyStatus, setProxyStatus] = useState<ProxyStatus | null>(null);
   const [checking, setChecking] = useState(false);
   const [runningCases, setRunningCases] = useState<UrlTestCase[]>([]);
@@ -193,12 +193,14 @@ export default function UrlTesterPage() {
 
   const handleRun = useCallback(
     async (cases: UrlTestCase[]) => {
-      if (proxy) {
+      const proxyUrl = proxy.trim();
+
+      if (proxyUrl) {
         setChecking(true);
         try {
           const status = await apiPost<ProxyStatus>(
             "/tools/url-tester/check-proxy",
-            { proxy }
+            { proxy: proxyUrl }
           );
           setProxyStatus(status);
           if (!status.ok) {
@@ -219,13 +221,14 @@ export default function UrlTesterPage() {
         setProxyStatus(null);
       }
       setRunningCases(cases);
-      run(cases, proxy || undefined, notifySlack, activeCollection?.name);
+      run(cases, proxyUrl || undefined, notifySlack, activeCollection?.name);
     },
     [run, proxy, notifySlack, activeCollection]
   );
 
   const handleSaveSchedule = useCallback(async (cron: string, enabled: boolean) => {
     if (!activeCollection) return;
+    const proxyUrl = proxy.trim();
     setScheduleSaving(true);
     try {
       const updatedSchedule = await apiPut<ScheduleData>(
@@ -233,7 +236,7 @@ export default function UrlTesterPage() {
         {
           cron,
           enabled,
-          proxy: proxy || undefined,
+          proxy: proxyUrl || undefined,
           notifySlack: true,
         }
       );
@@ -307,7 +310,7 @@ export default function UrlTesterPage() {
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              通过 HTTP 代理发送测试请求，用于模拟不同地区访问
+              默认直连；填写 HTTP 代理后可模拟特定出口网络
             </TooltipContent>
           </Tooltip>
           <Tooltip>
@@ -341,7 +344,7 @@ export default function UrlTesterPage() {
         <Alert variant="destructive" className="py-2">
           <WifiOff className="h-3.5 w-3.5" />
           <AlertDescription className="text-xs">
-            {proxyStatus.error || "代理连接失败"} — 请开启 VPN 后再运行测试
+            {proxyStatus.error || "代理连接失败"}。清空代理地址即可直连运行。
           </AlertDescription>
         </Alert>
       )}
@@ -358,7 +361,7 @@ export default function UrlTesterPage() {
                 className="text-[10px] border-orange-200 text-orange-600"
               >
                 <Globe className="h-2.5 w-2.5 mr-0.5" />
-                自动切国家
+                可自动切节点
               </Badge>
             )}
           </AlertDescription>
