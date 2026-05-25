@@ -39,7 +39,7 @@ export interface UrlTestResult {
   failureReason?: string;
   durationMs: number;
   usedNode?: string;
-  vpnWarning?: string;
+  proxyWarning?: string;
   triedNodes?: string[];
 }
 
@@ -65,24 +65,24 @@ export interface TestBatchResult {
 export const DEFAULT_TEST_CASES: UrlTestCase[] = [
   {
     id: 'vr-1',
-    name: '日本用户访问首页 — 不重定向',
-    description: '日语用户直接返回首页内容（HTTP 200），不发生语言重定向',
+    name: '日语浏览器访问首页 — 不重定向',
+    description: 'Accept-Language 为日语，应直接返回首页（HTTP 200），不发生语言重定向',
     url: 'https://www.notta.ai/',
+    headers: { 'Accept-Language': 'ja-JP,ja;q=0.9' },
     expectedStatus: 200,
-    country: 'JP',
   },
   {
     id: 'vr-2',
-    name: '美国用户访问首页 — 302 到 /en/',
-    description: '美国 IP 访问首页应 302 重定向到 /en/',
+    name: '英语浏览器访问首页 — 302 到 /en/',
+    description: 'Accept-Language 为英语，应重定向到 /en/',
     url: 'https://www.notta.ai/',
+    headers: { 'Accept-Language': 'en-US,en;q=0.9' },
     expectedStatus: 302,
     expectedRedirectUrl: 'https://www.notta.ai/en/',
-    country: 'US',
   },
   {
     id: 'vr-3',
-    name: 'Cookie 语言优先于国家 — 302 到 /es/',
+    name: 'Cookie 语言优先 — 302 到 /es/',
     description: '设置 selected-lang=es cookie 后应重定向到 /es/',
     url: 'https://www.notta.ai/',
     cookies: { 'selected-lang': 'es' },
@@ -101,13 +101,12 @@ export const DEFAULT_TEST_CASES: UrlTestCase[] = [
   },
   {
     id: 'vr-12',
-    name: '不支持的语言国家 — fallback 到 /en/',
-    description: '俄语 Accept-Language 不在支持列表中，回退到 /en/',
+    name: '俄语浏览器 — fallback 到 /en/',
+    description: '俄语 Accept-Language 不在支持列表中，应 fallback 到 /en/',
     url: 'https://www.notta.ai/',
     headers: { 'Accept-Language': 'ru' },
     expectedStatus: 302,
     expectedRedirectUrl: 'https://www.notta.ai/en/',
-    country: 'US',
   },
   {
     id: 'or-5',

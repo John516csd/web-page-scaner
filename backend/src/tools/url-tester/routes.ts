@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import net from 'node:net';
 import { taskManager } from '../../shared/task-manager.js';
 import { executeTest } from './test-executor.js';
-import { getCurrentNode, switchToCountry, switchToNode, isAvailable, findAllNodesForCountry, healthCheckNode } from './node-switcher.js';
+import { getCurrentNode, switchToNode, isAvailable, findAllNodesForCountry, healthCheckNode } from './node-switcher.js';
 import { sendSlackMessage, formatTestReport } from '../../shared/slack.js';
 import { getSchedule, getAllSchedules, updateSchedule, runScheduleNow } from './scheduler.js';
 import { collectionStore } from './collections.js';
@@ -51,9 +51,11 @@ export function registerRoutes(fastify: FastifyInstance) {
     const results = [];
     const startTime = Date.now();
 
-    const canSwitch = proxy && await isAvailable();
-    const originalNode = canSwitch ? await getCurrentNode() : '';
+    const proxyUrl = proxy?.trim() || undefined;
+    const canAutoSwitch = Boolean(proxyUrl) && await isAvailable();
+    const originalNode = canAutoSwitch ? await getCurrentNode() : '';
     let lastCountry: string | undefined;
+    let lastNode: string | undefined;
 
     try {
       for (let i = 0; i < testCases.length; i++) {
@@ -61,37 +63,27 @@ export function registerRoutes(fastify: FastifyInstance) {
 
         const testCase = testCases[i];
         let usedNode: string | undefined;
-        let vpnFailed = false;
+        let proxyWarning: string | undefined;
         const triedNodes: string[] = [];
 
-        // 如果测试用例需要 VPN 但 VPN 不可用
-        if (testCase.country && !canSwitch) {
-          vpnFailed = true;
+        if (canAutoSwitch && testCase.country && testCase.country !== lastCountry) {
           emit({
             type: 'progress',
-            step: `vpn-check-${testCase.id}`,
-            status: 'error',
-            message: `⚠️ ${testCase.name} 需要 ${testCase.country} VPN，但 VPN 未启用或不可用`,
-            data: { index: i, total: testCases.length },
-          });
-        } else if (canSwitch && testCase.country && testCase.country !== lastCountry) {
-          emit({
-            type: 'progress',
-            step: `vpn-switch-${testCase.id}`,
+            step: `proxy-switch-${testCase.id}`,
             status: 'running',
-            message: `正在为 ${testCase.name} 切换到 ${testCase.country} VPN...`,
+            message: `正在为 ${testCase.name} 切换到 ${testCase.country} 节点...`,
             data: { index: i, total: testCases.length },
           });
 
           const allNodes = await findAllNodesForCountry(testCase.country);
           
           if (allNodes.length === 0) {
-            vpnFailed = true;
+            proxyWarning = `未找到 ${testCase.country} 的代理节点，已继续按当前网络执行。`;
             emit({
               type: 'progress',
-              step: `vpn-switch-${testCase.id}`,
+              step: `proxy-switch-${testCase.id}`,
               status: 'error',
-              message: `未找到 ${testCase.country} 的 VPN 节点`,
+              message: `未找到 ${testCase.country} 的代理节点，继续按当前网络执行`,
               data: { index: i, total: testCases.length },
             });
           } else {
@@ -100,21 +92,21 @@ export function registerRoutes(fastify: FastifyInstance) {
             for (const node of allNodes) {
               emit({
                 type: 'progress',
-                step: `vpn-health-${testCase.id}`,
+                step: `proxy-health-${testCase.id}`,
                 status: 'running',
                 message: `正在测试 ${node}...`,
                 data: { index: i, total: testCases.length },
               });
 
               await switchToNode(node);
-              const healthy = await healthCheckNode(proxy!);
+              const healthy = await healthCheckNode(proxyUrl!);
               triedNodes.push(node);
 
               if (healthy) {
                 workingNode = node;
                 emit({
                   type: 'progress',
-                  step: `vpn-health-${testCase.id}`,
+                  step: `proxy-health-${testCase.id}`,
                   status: 'done',
                   message: `✓ 已连接到 ${node}`,
                   data: { index: i, total: testCases.length },
@@ -123,7 +115,7 @@ export function registerRoutes(fastify: FastifyInstance) {
               } else {
                 emit({
                   type: 'progress',
-                  step: `vpn-health-${testCase.id}`,
+                  step: `proxy-health-${testCase.id}`,
                   status: 'error',
                   message: `✗ ${node} 不可用，尝试下一个...`,
                   data: { index: i, total: testCases.length },
@@ -132,21 +124,22 @@ export function registerRoutes(fastify: FastifyInstance) {
             }
 
             if (!workingNode) {
-              vpnFailed = true;
+              proxyWarning = `所有 ${testCase.country} 代理节点都不可用，已继续按当前网络执行${triedNodes.length > 0 ? ` (尝试了 ${triedNodes.join(', ')})` : ''}。`;
               emit({
                 type: 'progress',
-                step: `vpn-switch-${testCase.id}`,
+                step: `proxy-switch-${testCase.id}`,
                 status: 'error',
-                message: `所有 ${testCase.country} VPN 节点都不可用`,
+                message: `所有 ${testCase.country} 代理节点都不可用，继续按当前网络执行`,
                 data: { index: i, total: testCases.length },
               });
             } else {
               usedNode = workingNode;
               lastCountry = testCase.country;
+              lastNode = workingNode;
             }
           }
-        } else if (canSwitch && testCase.country && lastCountry) {
-          usedNode = lastCountry;
+        } else if (canAutoSwitch && testCase.country && lastCountry) {
+          usedNode = lastNode;
         }
 
         emit({
@@ -157,13 +150,11 @@ export function registerRoutes(fastify: FastifyInstance) {
           data: { index: i, total: testCases.length, usedNode },
         });
 
-        // 执行测试，即使 VPN 失败也继续
-        const result = await executeTest(testCase, proxy);
+        const result = await executeTest(testCase, proxyUrl);
         result.usedNode = usedNode;
         
-        // 如果需要 VPN 但连接失败，在结果中添加警告
-        if (vpnFailed && testCase.country) {
-          result.vpnWarning = `⚠️ 该测试需要 ${testCase.country} VPN，但连接失败${triedNodes.length > 0 ? ` (尝试了 ${triedNodes.join(', ')})` : ''}。测试结果可能不准确。`;
+        if (proxyWarning) {
+          result.proxyWarning = proxyWarning;
           result.triedNodes = triedNodes.length > 0 ? triedNodes : undefined;
         }
 
@@ -178,7 +169,7 @@ export function registerRoutes(fastify: FastifyInstance) {
         results.push(result);
       }
     } finally {
-      if (canSwitch && originalNode && lastCountry) {
+      if (canAutoSwitch && originalNode && lastCountry) {
         try {
           await switchToNode(originalNode);
         } catch {
@@ -219,7 +210,7 @@ export function registerRoutes(fastify: FastifyInstance) {
             }));
 
           const title = collectionName ? `URL Tester — ${collectionName}` : 'URL Tester';
-          const blocks = formatTestReport(title, summary, failures);
+          const blocks = formatTestReport(title, summary, failures, process.env.SLACK_FAILURE_MENTION);
           await sendSlackMessage(process.env.SLACK_WEBHOOK_URL, blocks);
 
           emit({
@@ -272,7 +263,7 @@ export function registerRoutes(fastify: FastifyInstance) {
         autoSwitch: mihomoUp,
       };
     } catch {
-      return { ok: false, mode: 'proxy' as const, error: '代理连接失败，请检查 VPN 是否已开启' };
+      return { ok: false, mode: 'proxy' as const, error: '代理连接失败，请检查代理地址是否可用；也可以清空代理后直连运行' };
     }
   });
 

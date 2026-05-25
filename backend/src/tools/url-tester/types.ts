@@ -10,6 +10,7 @@ export interface UrlTestCase {
   cookies?: Record<string, string>;
   expectedStatus: number;
   expectedRedirectUrl?: string;
+  expectedRobotsMeta?: string;
   country?: GeoCountry;
   notes?: string;
 }
@@ -18,13 +19,13 @@ export interface UrlTestResult {
   testCase: UrlTestCase;
   actualStatus: number;
   actualRedirectUrl?: string;
+  actualRobotsMeta?: string;
   responseHeaders?: Record<string, string>;
   passed: boolean;
   failureReason?: string;
   durationMs: number;
   usedNode?: string;
-  vpnWarning?: string;
-  vpnFailure?: boolean;
+  proxyWarning?: string;
   triedNodes?: string[];
 }
 

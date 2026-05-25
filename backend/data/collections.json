@@ -6,30 +6,28 @@
     "testCases": [
       {
         "id": "vr-1",
-        "name": "日本用户（日语浏览器）访问首页 — 不重定向",
-        "description": "日本 IP + Accept-Language 为日语，应直接返回首页（HTTP 200），不发生语言重定向",
+        "name": "日语浏览器访问首页 — 不重定向",
+        "description": "Accept-Language 为日语，应直接返回首页（HTTP 200），不发生语言重定向",
         "url": "https://www.notta.ai/",
         "expectedStatus": 200,
-        "country": "JP",
         "headers": {
           "Accept-Language": "ja-JP,ja;q=0.9"
         }
       },
       {
         "id": "vr-2",
-        "name": "美国用户（英语浏览器）访问首页 — 302 到 /en/",
-        "description": "美国 IP + Accept-Language 为英语，应重定向到 /en/",
+        "name": "英语浏览器访问首页 — 302 到 /en/",
+        "description": "Accept-Language 为英语，应重定向到 /en/",
         "url": "https://www.notta.ai/",
         "expectedStatus": 302,
         "expectedRedirectUrl": "https://www.notta.ai/en/",
-        "country": "US",
         "headers": {
           "Accept-Language": "en-US,en;q=0.9"
         }
       },
       {
         "id": "vr-3",
-        "name": "Cookie 语言优先于国家 — 302 到 /es/",
+        "name": "Cookie 语言优先 — 302 到 /es/",
         "description": "设置 selected-lang=es cookie 后应重定向到 /es/",
         "url": "https://www.notta.ai/",
         "cookies": {
@@ -50,15 +48,14 @@
       },
       {
         "id": "vr-12",
-        "name": "美国用户（俄语浏览器）— fallback 到 /en/",
-        "description": "美国 IP + 俄语 Accept-Language（不支持），应 fallback 到 /en/",
+        "name": "俄语浏览器 — fallback 到 /en/",
+        "description": "俄语 Accept-Language 不在支持列表中，应 fallback 到 /en/",
         "url": "https://www.notta.ai/",
         "headers": {
           "Accept-Language": "ru"
         },
         "expectedStatus": 302,
-        "expectedRedirectUrl": "https://www.notta.ai/en/",
-        "country": "US"
+        "expectedRedirectUrl": "https://www.notta.ai/en/"
       },
       {
         "id": "or-5",
@@ -148,33 +145,31 @@
       },
       {
         "id": "vr-13",
-        "name": "美国用户（日语浏览器）— 不重定向（验证 Accept-Language 优先）",
-        "description": "美国 IP + Accept-Language 为日语，验证新方案使用 Accept-Language，应返回日语首页（HTTP 200）",
+        "name": "日语浏览器 — 不重定向",
+        "description": "Accept-Language 为日语，应返回日语首页（HTTP 200）",
         "url": "https://www.notta.ai/",
-        "country": "US",
         "headers": {
           "Accept-Language": "ja-JP,ja;q=0.9,en;q=0.8"
         },
         "expectedStatus": 200,
-        "notes": "关键测试：如果返回 200（日语首页），说明使用了 Accept-Language；如果重定向到 /en/，说明还在使用 IP 国家"
+        "notes": "关键测试：如果返回 200（日语首页），说明使用了 Accept-Language；如果重定向到 /en/，说明语言判断逻辑异常"
       },
       {
         "id": "vr-14",
-        "name": "日本用户（英语浏览器）— 302 到 /en/（验证 Accept-Language 优先）",
-        "description": "日本 IP + Accept-Language 为英语，验证新方案使用 Accept-Language，应重定向到 /en/",
+        "name": "英语浏览器 — 302 到 /en/",
+        "description": "Accept-Language 为英语，应重定向到 /en/",
         "url": "https://www.notta.ai/",
-        "country": "JP",
         "headers": {
           "Accept-Language": "en-US,en;q=0.9"
         },
         "expectedStatus": 302,
         "expectedRedirectUrl": "https://www.notta.ai/en/",
-        "notes": "关键测试：如果重定向到 /en/，说明使用了 Accept-Language；如果返回 200（日语），说明还在使用 IP 国家"
+        "notes": "关键测试：如果重定向到 /en/，说明使用了 Accept-Language；如果返回 200（日语首页），说明语言判断逻辑异常"
       },
       {
         "id": "vr-15",
         "name": "西班牙语浏览器访问首页 — 302 到 /es/",
-        "description": "Accept-Language 为西班牙语，应重定向到 /es/（不需要 VPN）",
+        "description": "Accept-Language 为西班牙语，应重定向到 /es/",
         "url": "https://www.notta.ai/",
         "headers": {
           "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
@@ -940,30 +935,28 @@
     "testCases": [
       {
         "id": "vr-1-test",
-        "name": "日本用户（日语浏览器）访问首页 — 不重定向",
-        "description": "日本 IP + Accept-Language 为日语，应直接返回首页（HTTP 200），不发生语言重定向",
+        "name": "日语浏览器访问首页 — 不重定向",
+        "description": "Accept-Language 为日语，应直接返回首页（HTTP 200），不发生语言重定向",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/",
         "expectedStatus": 200,
-        "country": "JP",
         "headers": {
           "Accept-Language": "ja-JP,ja;q=0.9"
         }
       },
       {
         "id": "vr-2-test",
-        "name": "美国用户（英语浏览器）访问首页 — 302 到 /en/",
-        "description": "美国 IP + Accept-Language 为英语，应重定向到 /en/",
+        "name": "英语浏览器访问首页 — 302 到 /en/",
+        "description": "Accept-Language 为英语，应重定向到 /en/",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/",
         "expectedStatus": 302,
         "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/",
-        "country": "US",
         "headers": {
           "Accept-Language": "en-US,en;q=0.9"
         }
       },
       {
         "id": "vr-3-test",
-        "name": "Cookie 语言优先于国家 — 302 到 /es/",
+        "name": "Cookie 语言优先 — 302 到 /es/",
         "description": "设置 selected-lang=es cookie 后应重定向到 /es/",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/",
         "cookies": {
@@ -984,15 +977,14 @@
       },
       {
         "id": "vr-12-test",
-        "name": "美国用户（俄语浏览器）— fallback 到 /en/",
-        "description": "美国 IP + 俄语 Accept-Language（不支持），应 fallback 到 /en/",
+        "name": "俄语浏览器 — fallback 到 /en/",
+        "description": "俄语 Accept-Language 不在支持列表中，应 fallback 到 /en/",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/",
         "headers": {
           "Accept-Language": "ru"
         },
         "expectedStatus": 302,
-        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/",
-        "country": "US"
+        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/"
       },
       {
         "id": "or-5-test",
@@ -1082,33 +1074,31 @@
       },
       {
         "id": "vr-13-test",
-        "name": "美国用户（日语浏览器）— 不重定向（验证 Accept-Language 优先）",
-        "description": "美国 IP + Accept-Language 为日语，验证新方案使用 Accept-Language，应返回日语首页（HTTP 200）",
+        "name": "日语浏览器 — 不重定向",
+        "description": "Accept-Language 为日语，应返回日语首页（HTTP 200）",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/",
-        "country": "US",
         "headers": {
           "Accept-Language": "ja-JP,ja;q=0.9,en;q=0.8"
         },
         "expectedStatus": 200,
-        "notes": "关键测试：如果返回 200（日语首页），说明使用了 Accept-Language；如果重定向到 /en/，说明还在使用 IP 国家"
+        "notes": "关键测试：如果返回 200（日语首页），说明使用了 Accept-Language；如果重定向到 /en/，说明语言判断逻辑异常"
       },
       {
         "id": "vr-14-test",
-        "name": "日本用户（英语浏览器）— 302 到 /en/（验证 Accept-Language 优先）",
-        "description": "日本 IP + Accept-Language 为英语，验证新方案使用 Accept-Language，应重定向到 /en/",
+        "name": "英语浏览器 — 302 到 /en/",
+        "description": "Accept-Language 为英语，应重定向到 /en/",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/",
-        "country": "JP",
         "headers": {
           "Accept-Language": "en-US,en;q=0.9"
         },
         "expectedStatus": 302,
         "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/",
-        "notes": "关键测试：如果重定向到 /en/，说明使用了 Accept-Language；如果返回 200（日语），说明还在使用 IP 国家"
+        "notes": "关键测试：如果重定向到 /en/，说明使用了 Accept-Language；如果返回 200（日语首页），说明语言判断逻辑异常"
       },
       {
         "id": "vr-15-test",
         "name": "西班牙语浏览器访问首页 — 302 到 /es/",
-        "description": "Accept-Language 为西班牙语，应重定向到 /es/（不需要 VPN）",
+        "description": "Accept-Language 为西班牙语，应重定向到 /es/",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/",
         "headers": {
           "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
@@ -1866,5 +1856,503 @@
     ],
     "createdAt": "2026-03-16T06:21:44.019Z",
     "updatedAt": "2026-03-16T06:21:44.019Z"
+  },
+  {
+    "id": "noindex-tests",
+    "name": "noindex 页面测试",
+    "description": "抽样验证需要返回 200 且带有 <meta name=\"robots\" content=\"noindex, nofollow\"> 的页面",
+    "testCases": [
+      {
+        "id": "ni-1",
+        "name": "/ar/chrome-extension",
+        "description": "阿拉伯语 chrome-extension 页面应 noindex",
+        "url": "https://www.notta.ai/ar/chrome-extension",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-2",
+        "name": "/ar/tools/voice-to-text",
+        "description": "阿拉伯语 voice-to-text 工具页应 noindex",
+        "url": "https://www.notta.ai/ar/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-3",
+        "name": "/author/anna",
+        "description": "日语作者页应 noindex",
+        "url": "https://www.notta.ai/author/anna",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-4",
+        "name": "/blog/category/meetings",
+        "description": "日语 blog 分类页应 noindex",
+        "url": "https://www.notta.ai/blog/category/meetings",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-5",
+        "name": "/blog/duolingo-pricing",
+        "description": "日语 blog 文章应 noindex（原 301 已移除，回退为 200+noindex）",
+        "url": "https://www.notta.ai/blog/duolingo-pricing",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-6",
+        "name": "/blog/project-management-tools",
+        "description": "C 组新增 noindex 页面",
+        "url": "https://www.notta.ai/blog/project-management-tools",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-7",
+        "name": "/blog/what-is-knowledge-base",
+        "description": "C 组新增 noindex 页面",
+        "url": "https://www.notta.ai/blog/what-is-knowledge-base",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-8",
+        "name": "/cases/startup",
+        "description": "日语 cases 页应 noindex",
+        "url": "https://www.notta.ai/cases/startup",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-9",
+        "name": "/changelog/notta-web-4-28-0",
+        "description": "changelog 页应 noindex",
+        "url": "https://www.notta.ai/changelog/notta-web-4-28-0",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-10",
+        "name": "/cs/tools/voice-to-text",
+        "description": "B 组新增 noindex 页面（捷克语）",
+        "url": "https://www.notta.ai/cs/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-11",
+        "name": "/de/tools/ai-summary",
+        "description": "B 组新增 noindex 页面（德语）",
+        "url": "https://www.notta.ai/de/tools/ai-summary",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-12",
+        "name": "/download",
+        "description": "下载页应 noindex",
+        "url": "https://www.notta.ai/download",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-13",
+        "name": "/en/blog/auto-join-zoom-meeting",
+        "description": "C 组新增 noindex 页面（英语 blog）",
+        "url": "https://www.notta.ai/en/blog/auto-join-zoom-meeting",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-14",
+        "name": "/es/tools/voice-to-text",
+        "description": "西班牙语 voice-to-text 工具页应 noindex",
+        "url": "https://www.notta.ai/es/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-15",
+        "name": "/fa/tools/voice-to-text",
+        "description": "B 组新增 noindex 页面（波斯语）",
+        "url": "https://www.notta.ai/fa/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-16",
+        "name": "/fr/tools/legal-transcription-software",
+        "description": "C 组新增 noindex 页面（法语）",
+        "url": "https://www.notta.ai/fr/tools/legal-transcription-software",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-17",
+        "name": "/hi/tools/pdf-summary",
+        "description": "B 组新增 noindex 页面（印地语）",
+        "url": "https://www.notta.ai/hi/tools/pdf-summary",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-18",
+        "name": "/hub/changelog",
+        "description": "hub changelog 页应 noindex",
+        "url": "https://www.notta.ai/hub/changelog",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-19",
+        "name": "/id/tools/voice-to-text",
+        "description": "印尼语 voice-to-text 工具页应 noindex",
+        "url": "https://www.notta.ai/id/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-20",
+        "name": "/it/tools/voice-to-text",
+        "description": "B 组新增 noindex 页面（意大利语）",
+        "url": "https://www.notta.ai/it/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-21",
+        "name": "/ko/tools/voice-to-text",
+        "description": "韩语 voice-to-text 工具页应 noindex",
+        "url": "https://www.notta.ai/ko/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-22",
+        "name": "/nl/confidential-transcription-services",
+        "description": "C 组新增 noindex 页面（荷兰语）",
+        "url": "https://www.notta.ai/nl/confidential-transcription-services",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-23",
+        "name": "/pl/tools/ai-summary",
+        "description": "B 组新增 noindex 页面（波兰语）",
+        "url": "https://www.notta.ai/pl/tools/ai-summary",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-24",
+        "name": "/pt/tools/polish-speech-to-text",
+        "description": "C 组新增 noindex 页面（葡萄牙语）",
+        "url": "https://www.notta.ai/pt/tools/polish-speech-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-25",
+        "name": "/resources/notta-introduction",
+        "description": "resources 页应 noindex",
+        "url": "https://www.notta.ai/resources/notta-introduction",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-26",
+        "name": "/showcase",
+        "description": "showcase 页应 noindex",
+        "url": "https://www.notta.ai/showcase",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-27",
+        "name": "/th/tools/voice-to-text",
+        "description": "泰语 voice-to-text 工具页应 noindex",
+        "url": "https://www.notta.ai/th/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-28",
+        "name": "/tr/tools/voice-to-text",
+        "description": "土耳其语 voice-to-text 工具页应 noindex",
+        "url": "https://www.notta.ai/tr/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-29",
+        "name": "/uk/tools/ai-summary",
+        "description": "B 组新增 noindex 页面（乌克兰语）",
+        "url": "https://www.notta.ai/uk/tools/ai-summary",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-30",
+        "name": "/vi/tools/voice-to-text",
+        "description": "越南语 voice-to-text 工具页应 noindex",
+        "url": "https://www.notta.ai/vi/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      }
+    ],
+    "createdAt": "2026-04-16T00:00:00.000Z",
+    "updatedAt": "2026-04-16T00:00:00.000Z"
+  },
+  {
+    "id": "test-noindex-tests",
+    "name": "noindex 页面测试（测试环境）",
+    "description": "抽样验证需要返回 200 且带有 <meta name=\"robots\" content=\"noindex, nofollow\"> 的页面 - 测试环境版本",
+    "testCases": [
+      {
+        "id": "ni-1-test",
+        "name": "/ar/chrome-extension",
+        "description": "阿拉伯语 chrome-extension 页面应 noindex",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/ar/chrome-extension",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-2-test",
+        "name": "/ar/tools/voice-to-text",
+        "description": "阿拉伯语 voice-to-text 工具页应 noindex",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/ar/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-3-test",
+        "name": "/author/anna",
+        "description": "日语作者页应 noindex",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/author/anna",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-4-test",
+        "name": "/blog/category/meetings",
+        "description": "日语 blog 分类页应 noindex",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/category/meetings",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-5-test",
+        "name": "/blog/duolingo-pricing",
+        "description": "日语 blog 文章应 noindex（原 301 已移除，回退为 200+noindex）",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/duolingo-pricing",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-6-test",
+        "name": "/blog/project-management-tools",
+        "description": "C 组新增 noindex 页面",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/project-management-tools",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-7-test",
+        "name": "/blog/what-is-knowledge-base",
+        "description": "C 组新增 noindex 页面",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/what-is-knowledge-base",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-8-test",
+        "name": "/cases/startup",
+        "description": "日语 cases 页应 noindex",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/cases/startup",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-9-test",
+        "name": "/changelog/notta-web-4-28-0",
+        "description": "changelog 页应 noindex",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/changelog/notta-web-4-28-0",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-10-test",
+        "name": "/cs/tools/voice-to-text",
+        "description": "B 组新增 noindex 页面（捷克语）",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/cs/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-11-test",
+        "name": "/de/tools/ai-summary",
+        "description": "B 组新增 noindex 页面（德语）",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/de/tools/ai-summary",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-12-test",
+        "name": "/download",
+        "description": "下载页应 noindex",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/download",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-13-test",
+        "name": "/en/blog/auto-join-zoom-meeting",
+        "description": "C 组新增 noindex 页面（英语 blog）",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/blog/auto-join-zoom-meeting",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-14-test",
+        "name": "/es/tools/voice-to-text",
+        "description": "西班牙语 voice-to-text 工具页应 noindex",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/es/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-15-test",
+        "name": "/fa/tools/voice-to-text",
+        "description": "B 组新增 noindex 页面（波斯语）",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/fa/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-16-test",
+        "name": "/fr/tools/legal-transcription-software",
+        "description": "C 组新增 noindex 页面（法语）",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/fr/tools/legal-transcription-software",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-17-test",
+        "name": "/hi/tools/pdf-summary",
+        "description": "B 组新增 noindex 页面（印地语）",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/hi/tools/pdf-summary",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-18-test",
+        "name": "/hub/changelog",
+        "description": "hub changelog 页应 noindex",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/hub/changelog",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-19-test",
+        "name": "/id/tools/voice-to-text",
+        "description": "印尼语 voice-to-text 工具页应 noindex",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/id/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-20-test",
+        "name": "/it/tools/voice-to-text",
+        "description": "B 组新增 noindex 页面（意大利语）",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/it/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-21-test",
+        "name": "/ko/tools/voice-to-text",
+        "description": "韩语 voice-to-text 工具页应 noindex",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/ko/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-22-test",
+        "name": "/nl/confidential-transcription-services",
+        "description": "C 组新增 noindex 页面（荷兰语）",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/nl/confidential-transcription-services",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-23-test",
+        "name": "/pl/tools/ai-summary",
+        "description": "B 组新增 noindex 页面（波兰语）",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/pl/tools/ai-summary",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-24-test",
+        "name": "/pt/tools/polish-speech-to-text",
+        "description": "C 组新增 noindex 页面（葡萄牙语）",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/pt/tools/polish-speech-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-25-test",
+        "name": "/resources/notta-introduction",
+        "description": "resources 页应 noindex",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/resources/notta-introduction",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-26-test",
+        "name": "/showcase",
+        "description": "showcase 页应 noindex",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/showcase",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-27-test",
+        "name": "/th/tools/voice-to-text",
+        "description": "泰语 voice-to-text 工具页应 noindex",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/th/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-28-test",
+        "name": "/tr/tools/voice-to-text",
+        "description": "土耳其语 voice-to-text 工具页应 noindex",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/tr/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-29-test",
+        "name": "/uk/tools/ai-summary",
+        "description": "B 组新增 noindex 页面（乌克兰语）",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/uk/tools/ai-summary",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      },
+      {
+        "id": "ni-30-test",
+        "name": "/vi/tools/voice-to-text",
+        "description": "越南语 voice-to-text 工具页应 noindex",
+        "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/vi/tools/voice-to-text",
+        "expectedStatus": 200,
+        "expectedRobotsMeta": "noindex, nofollow"
+      }
+    ],
+    "createdAt": "2026-04-16T00:00:00.000Z",
+    "updatedAt": "2026-04-16T00:00:00.000Z"
   }
 ]

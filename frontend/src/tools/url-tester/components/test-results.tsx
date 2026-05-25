@@ -22,7 +22,6 @@ import {
   Check,
   Loader2,
   Circle,
-  WifiOff,
   AlertTriangle,
 } from "lucide-react";
 import type {
@@ -175,7 +174,7 @@ export function TestResults({
               <div className="shrink-0">
                 {status === "running" ? (
                   <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin" />
-                ) : status === "done" && result?.passed && result?.vpnWarning ? (
+                ) : status === "done" && result?.passed && result?.proxyWarning ? (
                   <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
                 ) : status === "done" && result?.passed ? (
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
@@ -193,9 +192,9 @@ export function TestResults({
                 >
                   {tc.name}
                 </span>
-                {result && result.vpnWarning && (
+                {result && result.proxyWarning && (
                   <p className="text-[10px] truncate text-amber-600 dark:text-amber-500">
-                    {result.vpnWarning}
+                    {result.proxyWarning}
                   </p>
                 )}
                 {result && !result.passed && result.failureReason && (
@@ -225,7 +224,7 @@ export function TestResults({
         <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {detailResult?.passed && detailResult?.vpnWarning ? (
+              {detailResult?.passed && detailResult?.proxyWarning ? (
                 <AlertTriangle className="h-5 w-5 text-amber-500" />
               ) : detailResult?.passed ? (
                 <CheckCircle2 className="h-5 w-5 text-emerald-500" />
@@ -276,11 +275,11 @@ export function TestResults({
                   </DetailRow>
                 )}
                 <DetailRow label="耗时">{detailResult.durationMs}ms</DetailRow>
-                {detailResult.vpnWarning && (
-                  <DetailRow label="VPN 警告">
+                {detailResult.proxyWarning && (
+                  <DetailRow label="代理提示">
                     <span className="text-amber-600 dark:text-amber-500 flex items-start gap-1">
                       <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                      <span>{detailResult.vpnWarning}</span>
+                      <span>{detailResult.proxyWarning}</span>
                     </span>
                   </DetailRow>
                 )}
