@@ -64,7 +64,8 @@ export async function sendSlackMessage(
 export function formatTestReport(
   toolName: string,
   summary: TestSummary,
-  failures: FailureDetail[]
+  failures: FailureDetail[],
+  failureMention?: string
 ): SlackBlock[] {
   const blocks: SlackBlock[] = [];
 
@@ -107,6 +108,16 @@ export function formatTestReport(
     blocks.push({
       type: 'divider',
     });
+
+    if (failureMention) {
+      blocks.push({
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `${failureMention} URL 测试报告有失败用例，请关注。`,
+        },
+      });
+    }
 
     blocks.push({
       type: 'section',

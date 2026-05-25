@@ -144,7 +144,12 @@ export function initScheduler() {
             failureReason: r.failureReason,
           }));
 
-        const blocks = formatTestReport(`URL Tester — ${collectionName}`, summary, failures);
+        const blocks = formatTestReport(
+          `URL Tester — ${collectionName}`,
+          summary,
+          failures,
+          process.env.SLACK_FAILURE_MENTION
+        );
         await sendSlackMessage(process.env.SLACK_WEBHOOK_URL, blocks);
       } catch (error) {
         console.error('Failed to send Slack notification:', error);

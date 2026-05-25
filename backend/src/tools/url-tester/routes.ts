@@ -210,7 +210,7 @@ export function registerRoutes(fastify: FastifyInstance) {
             }));
 
           const title = collectionName ? `URL Tester — ${collectionName}` : 'URL Tester';
-          const blocks = formatTestReport(title, summary, failures);
+          const blocks = formatTestReport(title, summary, failures, process.env.SLACK_FAILURE_MENTION);
           await sendSlackMessage(process.env.SLACK_WEBHOOK_URL, blocks);
 
           emit({
