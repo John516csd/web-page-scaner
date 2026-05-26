@@ -1,7 +1,6 @@
 import { scheduler, type ScheduledJob } from '../../shared/scheduler.js';
 import { executeTest } from './test-executor.js';
 import { sendSlackMessage, formatTestReport } from '../../shared/slack.js';
-import { getCurrentNode, switchToNode, isAvailable, findAllNodesForCountry, healthCheckNode } from './node-switcher.js';
 import { collectionStore } from './collections.js';
 import type { UrlTestCase, UrlTestResult } from './types.js';
 
@@ -11,13 +10,17 @@ function getJobId(collectionId: string) {
   return `url-tester-${collectionId}`;
 }
 
-interface ScheduleConfig {
+export interface ScheduleConfig {
   [key: string]: unknown;
   collectionId?: string;
   caseIds?: string[];
-  proxy?: string;
   notifySlack?: boolean;
   testCases?: UrlTestCase[];
+}
+
+export function sanitizeScheduleConfig(config: ScheduleConfig & { proxy?: unknown }): ScheduleConfig {
+  const { proxy: _legacyProxy, ...configWithoutProxy } = config;
+  return configWithoutProxy;
 }
 
 export function initScheduler() {
@@ -54,68 +57,10 @@ export function initScheduler() {
 
     const results: UrlTestResult[] = [];
     const startTime = Date.now();
-    const proxy = config.proxy?.trim() || undefined;
 
-    const canAutoSwitch = Boolean(proxy) && await isAvailable();
-    const originalNode = canAutoSwitch ? await getCurrentNode() : '';
-    let lastCountry: string | undefined;
-    let lastNode: string | undefined;
-
-    try {
-      for (const testCase of testCases) {
-        let usedNode: string | undefined;
-        let proxyWarning: string | undefined;
-        const triedNodes: string[] = [];
-
-        if (canAutoSwitch && testCase.country && testCase.country !== lastCountry) {
-          const allNodes = await findAllNodesForCountry(testCase.country);
-          
-          if (allNodes.length === 0) {
-            proxyWarning = `未找到 ${testCase.country} 的代理节点，已继续按当前网络执行。`;
-          } else {
-            let workingNode: string | null = null;
-
-            for (const node of allNodes) {
-              await switchToNode(node);
-              const healthy = await healthCheckNode(proxy!);
-              triedNodes.push(node);
-
-              if (healthy) {
-                workingNode = node;
-                break;
-              }
-            }
-
-            if (!workingNode) {
-              proxyWarning = `所有 ${testCase.country} 代理节点都不可用，已继续按当前网络执行${triedNodes.length > 0 ? ` (尝试了 ${triedNodes.join(', ')})` : ''}。`;
-            } else {
-              usedNode = workingNode;
-              lastCountry = testCase.country;
-              lastNode = workingNode;
-            }
-          }
-        } else if (canAutoSwitch && testCase.country && lastCountry) {
-          usedNode = lastNode;
-        }
-
-        const result = await executeTest(testCase, proxy);
-        result.usedNode = usedNode;
-
-        if (proxyWarning) {
-          result.proxyWarning = proxyWarning;
-          result.triedNodes = triedNodes.length > 0 ? triedNodes : undefined;
-        }
-
-        results.push(result);
-      }
-    } finally {
-      if (canAutoSwitch && originalNode && lastCountry) {
-        try {
-          await switchToNode(originalNode);
-        } catch {
-          // best effort restore
-        }
-      }
+    for (const testCase of testCases) {
+      const result = await executeTest(testCase);
+      results.push(result);
     }
 
     const totalDuration = Date.now() - startTime;
@@ -178,7 +123,8 @@ export async function updateSchedule(
   config: ScheduleConfig
 ) {
   const jobId = getJobId(collectionId);
-  const fullConfig: ScheduleConfig = { ...config, collectionId };
+  const configWithoutProxy = sanitizeScheduleConfig(config as ScheduleConfig & { proxy?: unknown });
+  const fullConfig: ScheduleConfig = { ...configWithoutProxy, collectionId };
   const existingJob = scheduler.getJob(jobId);
 
   if (existingJob) {

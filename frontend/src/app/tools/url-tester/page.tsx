@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Wifi, WifiOff, Globe, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { TestCaseEditor } from "@/tools/url-tester/components/test-case-editor";
 import { TestResults } from "@/tools/url-tester/components/test-results";
 import { CollectionPicker } from "@/tools/url-tester/components/collection-picker";
@@ -16,16 +14,6 @@ import { SchedulerPanel } from "@/components/scheduler-panel";
 import { apiPost, apiGet, apiPut, apiDelete } from "@/lib/api";
 import type { UrlTestCase, TestCollection } from "@/tools/url-tester/types";
 
-interface ProxyStatus {
-  ok: boolean;
-  mode: "direct" | "proxy";
-  ip?: string;
-  country?: string;
-  city?: string;
-  autoSwitch?: boolean;
-  error?: string;
-}
-
 interface ScheduleData {
   id: string;
   toolId: string;
@@ -33,7 +21,6 @@ interface ScheduleData {
   enabled: boolean;
   config: {
     collectionId?: string;
-    proxy?: string;
     notifySlack?: boolean;
   };
   lastRun?: {
@@ -56,9 +43,6 @@ export default function UrlTesterPage() {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [proxy, setProxy] = useState("");
-  const [proxyStatus, setProxyStatus] = useState<ProxyStatus | null>(null);
-  const [checking, setChecking] = useState(false);
   const [runningCases, setRunningCases] = useState<UrlTestCase[]>([]);
 
   const [slackConfigured, setSlackConfigured] = useState(false);
@@ -193,42 +177,14 @@ export default function UrlTesterPage() {
 
   const handleRun = useCallback(
     async (cases: UrlTestCase[]) => {
-      const proxyUrl = proxy.trim();
-
-      if (proxyUrl) {
-        setChecking(true);
-        try {
-          const status = await apiPost<ProxyStatus>(
-            "/tools/url-tester/check-proxy",
-            { proxy: proxyUrl }
-          );
-          setProxyStatus(status);
-          if (!status.ok) {
-            setChecking(false);
-            return;
-          }
-        } catch {
-          setProxyStatus({
-            ok: false,
-            mode: "proxy",
-            error: "无法连接后端，请检查服务是否启动",
-          });
-          setChecking(false);
-          return;
-        }
-        setChecking(false);
-      } else {
-        setProxyStatus(null);
-      }
       setRunningCases(cases);
-      run(cases, proxyUrl || undefined, notifySlack, activeCollection?.name);
+      run(cases, notifySlack, activeCollection?.name);
     },
-    [run, proxy, notifySlack, activeCollection]
+    [run, notifySlack, activeCollection]
   );
 
   const handleSaveSchedule = useCallback(async (cron: string, enabled: boolean) => {
     if (!activeCollection) return;
-    const proxyUrl = proxy.trim();
     setScheduleSaving(true);
     try {
       const updatedSchedule = await apiPut<ScheduleData>(
@@ -236,7 +192,6 @@ export default function UrlTesterPage() {
         {
           cron,
           enabled,
-          proxy: proxyUrl || undefined,
           notifySlack: true,
         }
       );
@@ -247,7 +202,7 @@ export default function UrlTesterPage() {
     } finally {
       setScheduleSaving(false);
     }
-  }, [proxy, activeCollection]);
+  }, [activeCollection]);
 
   const handleRunScheduleNow = useCallback(async () => {
     if (!activeCollection) return;
@@ -276,46 +231,10 @@ export default function UrlTesterPage() {
         <h1 className="text-lg font-semibold tracking-tight shrink-0">
           URL Tester
         </h1>
-        <div className="flex items-center gap-4 divide-x divide-border">
+        <div className="flex items-center gap-4">
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-2 pr-2">
-                <Label className="text-xs text-muted-foreground shrink-0">
-                  请求代理
-                </Label>
-                <Input
-                  value={proxy}
-                  onChange={(e) => {
-                    setProxy(e.target.value);
-                    setProxyStatus(null);
-                  }}
-                  placeholder="留空则直连"
-                  className="font-mono text-xs h-7 w-48"
-                />
-                {proxy ? (
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] border-emerald-300 text-emerald-600 px-2 py-0 shrink-0"
-                  >
-                    代理
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] border-zinc-300 text-zinc-400 px-2 py-0 shrink-0"
-                  >
-                    直连
-                  </Badge>
-                )}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              默认直连；填写 HTTP 代理后可模拟特定出口网络
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-2 pl-4">
+              <div className="flex items-center gap-2">
                 <Switch
                   id="slack-notify"
                   checked={notifySlack}
@@ -340,33 +259,6 @@ export default function UrlTesterPage() {
       </div>
 
       {/* Status alerts */}
-      {proxyStatus && !proxyStatus.ok && (
-        <Alert variant="destructive" className="py-2">
-          <WifiOff className="h-3.5 w-3.5" />
-          <AlertDescription className="text-xs">
-            {proxyStatus.error || "代理连接失败"}。清空代理地址即可直连运行。
-          </AlertDescription>
-        </Alert>
-      )}
-      {proxyStatus && proxyStatus.ok && proxyStatus.mode === "proxy" && (
-        <Alert className="py-2">
-          <Wifi className="h-3.5 w-3.5" />
-          <AlertDescription className="flex items-center gap-2 text-xs">
-            <span>
-              代理已连接 — IP: {proxyStatus.ip} ({proxyStatus.city}, {proxyStatus.country})
-            </span>
-            {proxyStatus.autoSwitch && (
-              <Badge
-                variant="outline"
-                className="text-[10px] border-orange-200 text-orange-600"
-              >
-                <Globe className="h-2.5 w-2.5 mr-0.5" />
-                可自动切节点
-              </Badge>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
       {slackSent && (
         <Alert className="py-2">
           <Send className="h-3.5 w-3.5" />
@@ -399,7 +291,7 @@ export default function UrlTesterPage() {
               onSelectedIdsChange={setSelectedIds}
               onRun={handleRun}
               onStop={stop}
-              loading={loading || checking}
+              loading={loading}
               dirty={dirty}
               saving={saving}
               onSave={handleSaveCollection}

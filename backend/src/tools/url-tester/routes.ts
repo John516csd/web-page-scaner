@@ -1,181 +1,43 @@
 import type { FastifyInstance } from 'fastify';
-import net from 'node:net';
 import { taskManager } from '../../shared/task-manager.js';
 import { executeTest } from './test-executor.js';
-import { getCurrentNode, switchToNode, isAvailable, findAllNodesForCountry, healthCheckNode } from './node-switcher.js';
 import { sendSlackMessage, formatTestReport } from '../../shared/slack.js';
 import { getSchedule, getAllSchedules, updateSchedule, runScheduleNow } from './scheduler.js';
 import { collectionStore } from './collections.js';
 import type { RunTestsRequest, UrlTestCase } from './types.js';
 
-interface KnownProxy {
-  port: number;
-  name: string;
-  protocol: 'http' | 'socks5';
-}
-
-const KNOWN_PROXIES: KnownProxy[] = [
-  { port: 7890, name: 'Clash / Mihomo', protocol: 'http' },
-  { port: 7891, name: 'Clash SOCKS5', protocol: 'socks5' },
-  { port: 9674, name: 'Biuuu', protocol: 'http' },
-  { port: 1087, name: 'ClashX Pro', protocol: 'http' },
-  { port: 1080, name: 'SOCKS5 通用', protocol: 'socks5' },
-  { port: 8118, name: 'Privoxy', protocol: 'http' },
-  { port: 8080, name: 'HTTP 代理', protocol: 'http' },
-  { port: 6152, name: 'Surge', protocol: 'http' },
-  { port: 8888, name: 'Charles', protocol: 'http' },
-  { port: 9090, name: 'Mihomo API', protocol: 'http' },
-  { port: 1088, name: 'V2RayU', protocol: 'http' },
-  { port: 10809, name: 'V2RayN', protocol: 'http' },
-  { port: 10808, name: 'V2RayN SOCKS5', protocol: 'socks5' },
-  { port: 2080, name: 'Shadowrocket', protocol: 'http' },
-  { port: 20171, name: 'Quantumult X', protocol: 'http' },
-];
-
-function checkPort(port: number, timeout = 800): Promise<boolean> {
-  return new Promise((resolve) => {
-    const socket = new net.Socket();
-    socket.setTimeout(timeout);
-    socket.once('connect', () => { socket.destroy(); resolve(true); });
-    socket.once('timeout', () => { socket.destroy(); resolve(false); });
-    socket.once('error', () => { socket.destroy(); resolve(false); });
-    socket.connect(port, '127.0.0.1');
-  });
-}
-
 const TOOL_ID = 'url-tester';
 
 export function registerRoutes(fastify: FastifyInstance) {
   taskManager.registerHandler(TOOL_ID, async (_taskId, payload, emit, signal) => {
-    const { testCases, proxy, notifySlack, collectionName } = payload as RunTestsRequest;
+    const { testCases, notifySlack, collectionName } = payload as RunTestsRequest;
     const results = [];
     const startTime = Date.now();
 
-    const proxyUrl = proxy?.trim() || undefined;
-    const canAutoSwitch = Boolean(proxyUrl) && await isAvailable();
-    const originalNode = canAutoSwitch ? await getCurrentNode() : '';
-    let lastCountry: string | undefined;
-    let lastNode: string | undefined;
+    for (let i = 0; i < testCases.length; i++) {
+      if (signal.aborted) break;
 
-    try {
-      for (let i = 0; i < testCases.length; i++) {
-        if (signal.aborted) break;
+      const testCase = testCases[i];
 
-        const testCase = testCases[i];
-        let usedNode: string | undefined;
-        let proxyWarning: string | undefined;
-        const triedNodes: string[] = [];
+      emit({
+        type: 'progress',
+        step: `test-${testCase.id}`,
+        status: 'running',
+        message: testCase.name,
+        data: { index: i, total: testCases.length },
+      });
 
-        if (canAutoSwitch && testCase.country && testCase.country !== lastCountry) {
-          emit({
-            type: 'progress',
-            step: `proxy-switch-${testCase.id}`,
-            status: 'running',
-            message: `正在为 ${testCase.name} 切换到 ${testCase.country} 节点...`,
-            data: { index: i, total: testCases.length },
-          });
+      const result = await executeTest(testCase);
 
-          const allNodes = await findAllNodesForCountry(testCase.country);
-          
-          if (allNodes.length === 0) {
-            proxyWarning = `未找到 ${testCase.country} 的代理节点，已继续按当前网络执行。`;
-            emit({
-              type: 'progress',
-              step: `proxy-switch-${testCase.id}`,
-              status: 'error',
-              message: `未找到 ${testCase.country} 的代理节点，继续按当前网络执行`,
-              data: { index: i, total: testCases.length },
-            });
-          } else {
-            let workingNode: string | null = null;
+      emit({
+        type: 'progress',
+        step: `test-${testCase.id}`,
+        status: result.passed ? 'done' : 'error',
+        message: result.passed ? `✓ ${testCase.name}` : `✗ ${testCase.name}: ${result.failureReason}`,
+        data: result,
+      });
 
-            for (const node of allNodes) {
-              emit({
-                type: 'progress',
-                step: `proxy-health-${testCase.id}`,
-                status: 'running',
-                message: `正在测试 ${node}...`,
-                data: { index: i, total: testCases.length },
-              });
-
-              await switchToNode(node);
-              const healthy = await healthCheckNode(proxyUrl!);
-              triedNodes.push(node);
-
-              if (healthy) {
-                workingNode = node;
-                emit({
-                  type: 'progress',
-                  step: `proxy-health-${testCase.id}`,
-                  status: 'done',
-                  message: `✓ 已连接到 ${node}`,
-                  data: { index: i, total: testCases.length },
-                });
-                break;
-              } else {
-                emit({
-                  type: 'progress',
-                  step: `proxy-health-${testCase.id}`,
-                  status: 'error',
-                  message: `✗ ${node} 不可用，尝试下一个...`,
-                  data: { index: i, total: testCases.length },
-                });
-              }
-            }
-
-            if (!workingNode) {
-              proxyWarning = `所有 ${testCase.country} 代理节点都不可用，已继续按当前网络执行${triedNodes.length > 0 ? ` (尝试了 ${triedNodes.join(', ')})` : ''}。`;
-              emit({
-                type: 'progress',
-                step: `proxy-switch-${testCase.id}`,
-                status: 'error',
-                message: `所有 ${testCase.country} 代理节点都不可用，继续按当前网络执行`,
-                data: { index: i, total: testCases.length },
-              });
-            } else {
-              usedNode = workingNode;
-              lastCountry = testCase.country;
-              lastNode = workingNode;
-            }
-          }
-        } else if (canAutoSwitch && testCase.country && lastCountry) {
-          usedNode = lastNode;
-        }
-
-        emit({
-          type: 'progress',
-          step: `test-${testCase.id}`,
-          status: 'running',
-          message: testCase.name,
-          data: { index: i, total: testCases.length, usedNode },
-        });
-
-        const result = await executeTest(testCase, proxyUrl);
-        result.usedNode = usedNode;
-        
-        if (proxyWarning) {
-          result.proxyWarning = proxyWarning;
-          result.triedNodes = triedNodes.length > 0 ? triedNodes : undefined;
-        }
-
-        emit({
-          type: 'progress',
-          step: `test-${testCase.id}`,
-          status: result.passed ? 'done' : 'error',
-          message: result.passed ? `✓ ${testCase.name}` : `✗ ${testCase.name}: ${result.failureReason}`,
-          data: result,
-        });
-
-        results.push(result);
-      }
-    } finally {
-      if (canAutoSwitch && originalNode && lastCountry) {
-        try {
-          await switchToNode(originalNode);
-        } catch {
-          // best effort restore
-        }
-      }
+      results.push(result);
     }
 
     if (!signal.aborted) {
@@ -225,46 +87,11 @@ export function registerRoutes(fastify: FastifyInstance) {
   });
 
   fastify.get('/detect-proxies', async () => {
-    const results = await Promise.all(
-      KNOWN_PROXIES.map(async (p) => {
-        const open = await checkPort(p.port);
-        return open ? p : null;
-      })
-    );
-    return results
-      .filter((r): r is KnownProxy => r !== null)
-      .map((p) => ({
-        url: `${p.protocol === 'socks5' ? 'socks5' : 'http'}://127.0.0.1:${p.port}`,
-        name: p.name,
-        port: p.port,
-        protocol: p.protocol,
-      }));
+    return [];
   });
 
-  fastify.post('/check-proxy', async (request) => {
-    const { proxy } = request.body as { proxy?: string };
-    if (!proxy) return { ok: true, mode: 'direct' as const };
-
-    try {
-      const { fetch: undiciFetch } = await import('undici');
-      const { ProxyAgent } = await import('undici');
-      const res = await undiciFetch('https://ipinfo.io/json', {
-        dispatcher: new ProxyAgent(proxy),
-        signal: AbortSignal.timeout(5000),
-      });
-      const data = await res.json() as { country?: string; city?: string; ip?: string };
-      const mihomoUp = await isAvailable();
-      return {
-        ok: true,
-        mode: 'proxy' as const,
-        ip: data.ip,
-        country: data.country,
-        city: data.city,
-        autoSwitch: mihomoUp,
-      };
-    } catch {
-      return { ok: false, mode: 'proxy' as const, error: '代理连接失败，请检查代理地址是否可用；也可以清空代理后直连运行' };
-    }
+  fastify.post('/check-proxy', async () => {
+    return { ok: true, mode: 'direct' as const };
   });
 
   fastify.post('/run', async (request) => {
@@ -338,7 +165,6 @@ export function registerRoutes(fastify: FastifyInstance) {
     const body = request.body as {
       cron: string;
       enabled: boolean;
-      proxy?: string;
       notifySlack?: boolean;
     };
 
@@ -352,7 +178,6 @@ export function registerRoutes(fastify: FastifyInstance) {
     }
 
     const schedule = await updateSchedule(id, body.cron, body.enabled, {
-      proxy: body.proxy,
       notifySlack: body.notifySlack,
     });
 
