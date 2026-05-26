@@ -35,7 +35,7 @@ class SchedulerClass {
 
     try {
       const data = await fs.readFile(SCHEDULES_FILE, 'utf-8');
-      const jobs = JSON.parse(data) as ScheduledJob[];
+      const jobs = data.trim() ? JSON.parse(data) as ScheduledJob[] : [];
       for (const job of jobs) {
         this.jobs.set(job.id, job);
         if (job.enabled) {
