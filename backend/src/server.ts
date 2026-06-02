@@ -13,6 +13,7 @@ import { collectionStore } from './tools/url-tester/collections.js';
 import e2eTesterPlugin from './tools/e2e-tester/index.js';
 import { initScheduler as initE2ETesterScheduler } from './tools/e2e-tester/scheduler.js';
 import { e2eCollectionStore } from './tools/e2e-tester/collections.js';
+import migrationAcceptancePlugin from './tools/migration-acceptance/index.js';
 
 const fastify = Fastify({ logger: true });
 
@@ -38,6 +39,7 @@ async function start() {
   await fastify.register(migrationTrackerPlugin, { prefix: '/api/tools/migration-tracker' });
   await fastify.register(urlTesterPlugin, { prefix: '/api/tools/url-tester' });
   await fastify.register(e2eTesterPlugin, { prefix: '/api/tools/e2e-tester' });
+  await fastify.register(migrationAcceptancePlugin, { prefix: '/api/tools/migration-acceptance' });
 
   fastify.get('/api/health', async () => ({ status: 'ok' }));
 

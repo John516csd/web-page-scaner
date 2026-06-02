@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { FileSearch, Link2Off, GitMerge, Route, MonitorCheck } from "lucide-react";
+import { FileSearch, Link2Off, GitMerge, Route, MonitorCheck, ShieldCheck } from "lucide-react";
 
 export interface ToolMeta {
   id: string;
@@ -44,5 +44,12 @@ export const tools: ToolMeta[] = [
     description: "Playwright 端到端功能测试，支持脚本编辑与定时执行",
     icon: MonitorCheck,
     href: "/tools/e2e-tester",
+  },
+  {
+    id: "migration-acceptance",
+    name: "Migration Acceptance",
+    description: "Gatsby → Next.js 一键迁移自动化验收",
+    icon: ShieldCheck,
+    href: "/tools/migration-acceptance",
   },
 ];
