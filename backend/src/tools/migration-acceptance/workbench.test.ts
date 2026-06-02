@@ -249,6 +249,42 @@ test('defaultOneClickSuites contains only migration automation suites', () => {
   assert.equal(suites.includes('post-launch'), false);
 });
 
+test('i18n suite checks Japanese root with Accept-Language', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'acceptance-i18n-'));
+  const store = new AcceptanceStore(path.join(dir, 'acceptance.db'));
+  const originalFetch = globalThis.fetch;
+  let rootHeaders: RequestInit['headers'];
+
+  globalThis.fetch = (async (input, init) => {
+    const url = new URL(String(input));
+    const pathname = url.pathname;
+    const lang = pathname === '/' ? 'ja' : pathname.slice(1);
+    if (pathname === '/') {
+      rootHeaders = init?.headers;
+    }
+
+    return new Response(
+      `<html lang="${lang}"><head><link rel="canonical" href="https://www.notta.ai${pathname}" /><link rel="alternate" hreflang="en" href="https://www.notta.ai/en" /></head><body>${lang}</body></html>`,
+      { status: 200, headers: { 'Content-Type': 'text/html' } }
+    );
+  }) as typeof fetch;
+
+  try {
+    const result = await runAcceptanceWorkbench({
+      store,
+      env: 'test',
+      baseUrl: 'https://next.example.com',
+      suites: ['i18n'],
+    });
+
+    assert.equal(result.summary.failed, 0);
+    assert.deepEqual(rootHeaders, { 'Accept-Language': 'ja-JP,ja;q=0.9' });
+  } finally {
+    globalThis.fetch = originalFetch;
+    store.close();
+  }
+});
+
 test('functional-e2e suite reuses E2E collection cases and rewrites them to the acceptance base URL', async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'acceptance-e2e-'));
   const store = new AcceptanceStore(path.join(dir, 'acceptance.db'));
@@ -272,6 +308,13 @@ test('functional-e2e suite reuses E2E collection cases and rewrites them to the 
             url: 'https://www.notta.ai/tools/ai-summary',
             timeout: 90000,
             script: 'assert("https://app.notta.ai/signup".includes("app.notta.ai")); await page.waitForLoadState("networkidle");',
+          },
+          {
+            id: 'case-home-auth-links',
+            name: '日文首页 - 登录注册按钮链接验证',
+            url: 'https://www.notta.ai/',
+            timeout: 30000,
+            script: 'throw new Error("homepage auth link checks are excluded from migration acceptance");',
           },
           {
             id: 'case-external',

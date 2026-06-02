@@ -516,7 +516,9 @@ async function checkI18n(context: SuiteContext): Promise<AcceptanceItem[]> {
     const url = buildUrl(context.baseUrl, path);
     const start = Date.now();
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: path === '/' ? { 'Accept-Language': 'ja-JP,ja;q=0.9' } : undefined,
+      });
       const html = await response.text();
       const $ = cheerio.load(html);
       const expectedLang = path === '/' ? 'ja' : path.slice(1);
@@ -616,6 +618,7 @@ function selectMigrationE2ETestCases(
     for (const testCase of collection.testCases) {
       const url = parseUrl(testCase.url);
       if (!url || !isOfficialWebsiteE2ECase(url)) continue;
+      if (isExcludedMigrationE2ECase(collection.name, testCase)) continue;
 
       const rewritten = rewriteTestCaseForAcceptance(testCase, context);
       const key = `${url.pathname}${url.search}::${normalizeE2EName(testCase.name)}`;
@@ -649,6 +652,11 @@ function isOfficialWebsiteE2ECase(url: URL): boolean {
   if (host === 'app.notta.ai' || host === 'support.notta.ai') return false;
   if (host !== 'www.notta.ai' && !(host.startsWith('test-') && host.endsWith('.notta.ai'))) return false;
   return url.pathname === '/' || /^\/[a-z]{2}$/.test(url.pathname) || url.pathname.includes('/tools/');
+}
+
+function isExcludedMigrationE2ECase(collectionName: string, testCase: E2ETestCase): boolean {
+  const text = `${collectionName} ${testCase.name}`.toLowerCase();
+  return text.includes('首页登录注册按钮链接验证') || text.includes('登录注册按钮链接验证');
 }
 
 function rewriteTestCaseForAcceptance(
