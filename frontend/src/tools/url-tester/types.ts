@@ -166,10 +166,10 @@ export const DEFAULT_TEST_CASES: UrlTestCase[] = [
   {
     id: 'ex-2',
     name: '多语言重定向 — 德语',
-    description: '/de/audio-transkribieren 应 301 重定向到 /de/audio-to-text',
+    description: '/de/audio-transkribieren 应 301 重定向到 /de/tools/audio-to-text-converter',
     url: 'https://www.notta.ai/de/audio-transkribieren',
     expectedStatus: 301,
-    expectedRedirectUrl: 'https://www.notta.ai/de/audio-to-text',
+    expectedRedirectUrl: 'https://www.notta.ai/de/tools/audio-to-text-converter',
   },
   {
     id: 'ex-3',
