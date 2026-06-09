@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "tsx watch --env-file=.env src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "acceptance:run": "tsx src/tools/migration-acceptance/cli.ts",
+    "acceptance:generate-fixture": "tsx src/tools/migration-acceptance/generate-source-fixture.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
