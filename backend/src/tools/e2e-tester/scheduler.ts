@@ -2,6 +2,7 @@ import { scheduler, type ScheduledJob } from '../../shared/scheduler.js';
 import { executeE2ETest } from './test-executor.js';
 import { sendSlackMessage } from '../../shared/slack.js';
 import { e2eCollectionStore } from './collections.js';
+import { formatE2ESlackReport } from './slack-report.js';
 import type { E2ETestResult } from './types.js';
 
 const TOOL_ID = 'e2e-tester';
@@ -14,58 +15,6 @@ interface ScheduleConfig {
   [key: string]: unknown;
   collectionId?: string;
   notifySlack?: boolean;
-}
-
-function formatE2ESlackReport(
-  title: string,
-  summary: { total: number; passed: number; failed: number; duration: number },
-  failures: E2ETestResult[]
-) {
-  const blocks: Array<Record<string, unknown>> = [];
-
-  blocks.push({
-    type: 'header',
-    text: { type: 'plain_text', text: `${title} 测试报告`, emoji: true },
-  });
-  blocks.push({ type: 'divider' });
-
-  const statusEmoji = summary.failed === 0 ? '✅' : '⚠️';
-  const durationText = summary.duration >= 1000
-    ? `${(summary.duration / 1000).toFixed(1)}s`
-    : `${summary.duration}ms`;
-
-  blocks.push({
-    type: 'section',
-    fields: [
-      { type: 'mrkdwn', text: `*状态:*\n${statusEmoji} ${summary.passed}/${summary.total} 通过` },
-      { type: 'mrkdwn', text: `*耗时:*\n${durationText}` },
-    ],
-  });
-
-  if (failures.length > 0) {
-    blocks.push({ type: 'divider' });
-    blocks.push({
-      type: 'section',
-      text: { type: 'mrkdwn', text: `*失败用例 (${failures.length}):*` },
-    });
-
-    failures.forEach((f, i) => {
-      let text = `*${i + 1}. ${f.testCase.name}*\n`;
-      text += `URL: \`${f.testCase.url}\`\n`;
-      if (f.error) text += `错误: ${f.error}`;
-      blocks.push({ type: 'section', text: { type: 'mrkdwn', text } });
-    });
-  }
-
-  blocks.push({ type: 'divider' });
-  blocks.push({
-    type: 'context',
-    elements: [
-      { type: 'mrkdwn', text: `执行时间: ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}` },
-    ],
-  });
-
-  return blocks;
 }
 
 export function initScheduler() {
@@ -109,7 +58,12 @@ export function initScheduler() {
       try {
         const collectionName = collection.name;
         const failures = results.filter((r) => !r.passed);
-        const blocks = formatE2ESlackReport(`E2E Tester — ${collectionName}`, summary, failures);
+        const blocks = formatE2ESlackReport(
+          `E2E Tester — ${collectionName}`,
+          summary,
+          failures,
+          process.env.SLACK_FAILURE_MENTION
+        );
         await sendSlackMessage(process.env.SLACK_WEBHOOK_URL, blocks as any);
       } catch (error) {
         console.error('Failed to send E2E Slack notification:', error);
