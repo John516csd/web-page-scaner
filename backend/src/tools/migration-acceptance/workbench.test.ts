@@ -228,6 +228,72 @@ test('runAcceptanceWorkbench infers stage from selected suite when stages are om
   store.close();
 });
 
+test('runAcceptanceWorkbench emits item-level progress between suite start and finish', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'acceptance-progress-'));
+  const store = new AcceptanceStore(path.join(dir, 'acceptance.db'));
+  const events: Array<Record<string, unknown>> = [];
+
+  const result = await runAcceptanceWorkbench({
+    store,
+    env: 'test',
+    baseUrl: 'https://next.example.com',
+    suites: ['functional-e2e'],
+    e2eExecutor: async (testCase) => ({
+      testCase,
+      passed: true,
+      durationMs: 8,
+      consoleLogs: ['[log] ok'],
+    }),
+  }, (event) => events.push(event));
+
+  const suiteRunningIndex = events.findIndex((event) =>
+    event.type === 'progress' &&
+    event.step === 'functional-e2e' &&
+    event.status === 'running' &&
+    (event.data as { kind?: string } | undefined)?.kind !== 'suite-item'
+  );
+  const itemRunningIndex = events.findIndex((event) =>
+    event.type === 'progress' &&
+    event.step === 'functional-e2e' &&
+    event.status === 'running' &&
+    (event.data as { kind?: string } | undefined)?.kind === 'suite-item'
+  );
+  const itemDoneIndex = events.findIndex((event) =>
+    event.type === 'progress' &&
+    event.step === 'functional-e2e' &&
+    event.status === 'done' &&
+    (event.data as { kind?: string } | undefined)?.kind === 'suite-item'
+  );
+  const suiteDoneIndex = events.findIndex((event) =>
+    event.type === 'progress' &&
+    event.step === 'functional-e2e' &&
+    event.status === 'done' &&
+    (event.data as { kind?: string } | undefined)?.kind !== 'suite-item'
+  );
+  const firstItemDone = events[itemDoneIndex]?.data as {
+    kind?: string;
+    itemId?: string;
+    itemName?: string;
+    index?: number;
+    total?: number;
+    item?: { name?: string; status?: string };
+  } | undefined;
+
+  assert.ok(suiteRunningIndex >= 0);
+  assert.ok(itemRunningIndex > suiteRunningIndex);
+  assert.ok(itemDoneIndex > itemRunningIndex);
+  assert.ok(suiteDoneIndex > itemDoneIndex);
+  assert.equal(firstItemDone?.kind, 'suite-item');
+  assert.equal(firstItemDone?.index, 0);
+  assert.equal(firstItemDone?.total, 3);
+  assert.equal(firstItemDone?.itemName, 'Audio to Text tool shell readiness');
+  assert.equal(firstItemDone?.item?.name, 'Audio to Text tool shell readiness');
+  assert.equal(firstItemDone?.item?.status, 'pass');
+  assert.equal(result.summary.total, 3);
+  assert.equal(result.summary.passed, 3);
+  store.close();
+});
+
 test('defaultOneClickSuites contains only migration automation suites', () => {
   const suites = defaultOneClickSuites();
 
@@ -285,7 +351,7 @@ test('i18n suite checks Japanese root with Accept-Language', async () => {
   }
 });
 
-test('functional-e2e suite reuses E2E collection cases and rewrites them to the acceptance base URL', async () => {
+test('functional-e2e suite runs stable migration-owned tool checks instead of full E2E collection scripts', async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'acceptance-e2e-'));
   const store = new AcceptanceStore(path.join(dir, 'acceptance.db'));
   const executed: E2ETestCase[] = [];
@@ -328,25 +394,112 @@ test('functional-e2e suite reuses E2E collection cases and rewrites them to the 
     ],
     e2eExecutor: async (testCase) => {
       executed.push(testCase);
+      assert.doesNotMatch(testCase.script, /networkidle/);
+
+      const warningScreenshot = testCase.id === 'audio-to-text-paste-link'
+        ? [{
+            step: 'audio paste link terminal state',
+            timestamp: 20,
+            image: 'png',
+            status: 'warning' as const,
+            metadata: {
+              networkRequest: '405 https://api.example.com/file-transcribe/create-link',
+              consoleMessage: 'acceptance-status=warn; visibleState=message-or-dialog; apiStatus=405 https://api.example.com/file-transcribe/create-link',
+            },
+          }]
+        : undefined;
+
       return {
         testCase,
         passed: true,
         durationMs: 12,
+        screenshots: warningScreenshot,
         consoleLogs: ['[log] ok'],
       };
     },
   });
 
   const section = result.sections[0];
+  const warningItem = section?.items.find((entry) => entry.name === 'Audio to Text paste link readiness');
 
-  assert.equal(executed.length, 1);
-  assert.equal(executed[0]?.id, 'case-ai-summary');
-  assert.equal(executed[0]?.url, 'https://next.example.com/tools/ai-summary');
-  assert.match(executed[0]?.script || '', /test-app-wdnc5k6v5hu1i2uwb6oa\.notta\.ai/);
+  assert.equal(executed.length, 3);
+  assert.deepEqual(executed.map((entry) => entry.id), [
+    'audio-to-text-shell',
+    'audio-to-text-paste-link',
+    'youtube-summarizer-submit',
+  ]);
+  assert.deepEqual(executed.map((entry) => entry.url), [
+    'https://next.example.com/en/tools/audio-to-text-converter',
+    'https://next.example.com/en/tools/audio-to-text-converter',
+    'https://next.example.com/en/tools/youtube-video-summarizer',
+  ]);
+  assert.equal(executed.some((entry) => entry.id === 'case-ai-summary'), false);
   assert.equal(section?.suite, 'functional-e2e');
-  assert.equal(section?.total, 1);
-  assert.equal(section?.items[0]?.name, 'E2E Migration tool flows / AI Summary real flow');
-  assert.equal(section?.items[0]?.actual, 'passed; screenshots=0');
+  assert.equal(section?.total, 3);
+  assert.equal(section?.failed, 0);
+  assert.equal(section?.warned, 1);
+  assert.equal(warningItem?.status, 'warn');
+  assert.equal(warningItem?.severity, 'P2');
+  assert.match(warningItem?.actual || '', /api status: 405/);
+  assert.match(warningItem?.failureReason || '', /message-or-dialog/);
+  store.close();
+});
+
+test('functional-e2e suite reports missing core tool UI as a P1 failure', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'acceptance-e2e-missing-ui-'));
+  const store = new AcceptanceStore(path.join(dir, 'acceptance.db'));
+
+  const result = await runAcceptanceWorkbench({
+    store,
+    env: 'test',
+    baseUrl: 'https://next.example.com',
+    suites: ['functional-e2e'],
+    e2eExecutor: async (testCase) => ({
+      testCase,
+      passed: testCase.id !== 'audio-to-text-shell',
+      durationMs: 25,
+      error: testCase.id === 'audio-to-text-shell'
+        ? 'locator.waitFor: Timeout 15000ms exceeded waiting for .ant-upload-drag'
+        : undefined,
+    }),
+  });
+
+  const section = result.sections[0];
+  const failedItem = section?.items.find((entry) => entry.name === 'Audio to Text tool shell readiness');
+
+  assert.equal(section?.failed, 1);
+  assert.equal(failedItem?.status, 'fail');
+  assert.equal(failedItem?.severity, 'P1');
+  assert.match(failedItem?.failureReason || '', /required migration UI state/);
+  store.close();
+});
+
+test('functional-e2e suite reports fatal browser console errors as P1 failures', async () => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'acceptance-e2e-console-'));
+  const store = new AcceptanceStore(path.join(dir, 'acceptance.db'));
+
+  const result = await runAcceptanceWorkbench({
+    store,
+    env: 'test',
+    baseUrl: 'https://next.example.com',
+    suites: ['functional-e2e'],
+    e2eExecutor: async (testCase) => ({
+      testCase,
+      passed: true,
+      durationMs: 18,
+      consoleLogs: testCase.id === 'youtube-summarizer-submit'
+        ? ['[error] TypeError: Cannot read properties of undefined (reading "filename")']
+        : ['[error] Failed to load resource: the server responded with a status of 405 ()'],
+    }),
+  });
+
+  const section = result.sections[0];
+  const failedItem = section?.items.find((entry) => entry.name === 'YouTube Summarizer submit readiness');
+
+  assert.equal(section?.failed, 1);
+  assert.equal(failedItem?.status, 'fail');
+  assert.equal(failedItem?.severity, 'P1');
+  assert.match(failedItem?.failureReason || '', /TypeError/);
   store.close();
 });
 
