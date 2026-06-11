@@ -5,6 +5,7 @@ import {
   AlertCircle,
   CheckCircle2,
   ChevronDown,
+  Circle,
   Clipboard,
   Download,
   FileJson,
@@ -31,10 +32,12 @@ import { useMigrationAcceptance } from "@/tools/migration-acceptance/hooks/use-m
 import type {
   AcceptanceEnv,
   AcceptanceItem,
+  AcceptanceProgressItem,
   AcceptanceResult,
   AcceptanceSection,
   AcceptanceStatus,
   AcceptanceSuite,
+  AcceptanceSuiteProgress,
 } from "@/tools/migration-acceptance/types";
 
 const DEFAULT_BASE_URL = "https://d214wtvqj6ho8d.cloudfront.net";
@@ -61,6 +64,7 @@ const DEFAULT_SUITES: Array<{
 ];
 
 const SUITE_LABELS = new Map(DEFAULT_SUITES.map((suite) => [suite.id, suite.label]));
+const SUITE_META = new Map(DEFAULT_SUITES.map((suite) => [suite.id, suite]));
 
 export default function MigrationAcceptancePage() {
   const acceptance = useMigrationAcceptance();
@@ -77,6 +81,9 @@ export default function MigrationAcceptancePage() {
   const visibleSections = acceptance.result?.sections || acceptance.sections;
   const summary = acceptance.result?.summary;
   const blockers = acceptance.result?.goNoGo?.blockers || [];
+  const selectedSuite = acceptance.selectedSuite || DEFAULT_SUITES[0].id;
+  const selectedSuiteMeta = SUITE_META.get(selectedSuite);
+  const selectedSection = visibleSections.find((section) => section.suite === selectedSuite);
   const progressValue = useMemo(() => {
     if (!acceptance.loading) return summary ? 100 : 0;
     return Math.min(95, Math.round((visibleSections.length / DEFAULT_SUITES.length) * 100));
@@ -205,17 +212,41 @@ export default function MigrationAcceptancePage() {
                   <button
                     key={suite.id}
                     type="button"
-                    onClick={() => scrollToSuite(suite.id)}
-                    className="flex w-full min-w-0 items-start gap-2 rounded-md border px-3 py-2 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => {
+                      acceptance.selectSuite(suite.id);
+                      scrollToSuite(suite.id);
+                    }}
+                    className={`flex w-full min-w-0 items-start gap-2 rounded-md border px-3 py-2 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      selectedSuite === suite.id ? "border-primary/60 bg-primary/5" : ""
+                    }`}
                   >
-                    <StatusIcon status={isCurrent ? "pending" : section?.status || "pending"} spinning={isCurrent} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <span className="truncate text-sm font-medium">{suite.label}</span>
-                        {section && <Badge variant={section.status === "fail" ? "destructive" : "secondary"}>{section.status}</Badge>}
-                      </div>
-                      <div className="break-words text-xs text-muted-foreground">{suite.detail}</div>
-                    </div>
+                    {(() => {
+                      const progress = acceptance.suiteProgress[suite.id];
+                      const status = progress?.status || (isCurrent ? "running" : section?.status || "pending");
+                      const completed = progress?.completed ?? section?.items.length ?? 0;
+                      const total = progress?.total || section?.total || 0;
+                      const failed = progress?.failed ?? section?.failed ?? 0;
+                      const warned = progress?.warned ?? section?.warned ?? 0;
+
+                      return (
+                        <>
+                          <StatusIcon status={status} spinning={isCurrent || status === "running"} />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <span className="truncate text-sm font-medium">{suite.label}</span>
+                              {total > 0 && <Badge variant="secondary">{completed}/{total}</Badge>}
+                            </div>
+                            <div className="break-words text-xs text-muted-foreground">{suite.detail}</div>
+                            {(failed > 0 || warned > 0) && (
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                {failed > 0 && <Badge variant="destructive">{failed} fail</Badge>}
+                                {warned > 0 && <Badge variant="outline">{warned} warn</Badge>}
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
                   </button>
                 );
               })}
@@ -231,6 +262,16 @@ export default function MigrationAcceptancePage() {
             summary={summary}
             blockerCount={blockers.length}
             slackSent={acceptance.slackSent}
+          />
+
+          <SuiteExecutionPanel
+            suite={selectedSuite}
+            suiteLabel={selectedSuiteMeta?.label || selectedSuite}
+            suiteDetail={selectedSuiteMeta?.detail}
+            progress={acceptance.selectedSuiteProgress}
+            section={selectedSection}
+            loading={acceptance.loading}
+            currentSuite={acceptance.currentSuite}
           />
 
           <BlockingList items={blockers} expandedKey={expandedBlocker} onToggle={setExpandedBlocker} />
@@ -307,6 +348,175 @@ function SummaryTile({ label, value, status }: { label: string; value: string; s
         </div>
         <StatusIcon status={status} />
       </div>
+    </div>
+  );
+}
+
+function SuiteExecutionPanel({
+  suite,
+  suiteLabel,
+  suiteDetail,
+  progress,
+  section,
+  loading,
+  currentSuite,
+}: {
+  suite: AcceptanceSuite;
+  suiteLabel: string;
+  suiteDetail?: string;
+  progress: AcceptanceSuiteProgress | null;
+  section?: AcceptanceSection;
+  loading: boolean;
+  currentSuite: string | null;
+}) {
+  const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  const isRunningSuite = loading && currentSuite === suite;
+  const status = progress?.status || section?.status || (isRunningSuite ? "running" : "pending");
+  const items = progress?.items || [];
+  const completed = progress?.completed ?? section?.items.length ?? 0;
+  const total = progress?.total || section?.total || items.length;
+  const currentItem = progress?.currentItem;
+  const progressValue = total > 0 ? Math.round((completed / total) * 100) : isRunningSuite ? 5 : 0;
+
+  return (
+    <Card className="min-w-0">
+      <CardHeader className="pb-3">
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          <div className="min-w-0">
+            <CardTitle className="flex min-w-0 items-center gap-2 text-base">
+              <StatusIcon status={status} spinning={status === "running"} />
+              <span className="truncate">{suiteLabel}</span>
+            </CardTitle>
+            {suiteDetail && <div className="mt-1 text-xs text-muted-foreground">{suiteDetail}</div>}
+          </div>
+          <div className="flex shrink-0 flex-wrap justify-end gap-2">
+            {total > 0 && <Badge variant="secondary">{completed}/{total}</Badge>}
+            {(progress?.failed || 0) > 0 && <Badge variant="destructive">{progress?.failed} fail</Badge>}
+            {(progress?.warned || 0) > 0 && <Badge variant="outline">{progress?.warned} warn</Badge>}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {isRunningSuite && (
+          <div className="space-y-2 rounded-md border bg-muted/20 p-3">
+            <div className="flex min-w-0 items-center justify-between gap-3 text-sm">
+              <span className="flex min-w-0 items-center gap-2">
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+                <span className="truncate">正在执行：{currentItem?.name || suiteLabel}</span>
+              </span>
+              <span className="font-mono text-xs text-muted-foreground">{progressValue}%</span>
+            </div>
+            <Progress value={progressValue} className="h-1.5" />
+          </div>
+        )}
+
+        {items.length === 0 ? (
+          <div className="rounded-md border border-dashed px-3 py-6 text-sm text-muted-foreground">
+            {loading ? "等待该执行项开始产生条目。" : "选择或运行后会在这里显示该执行项的条目。"}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {items.map((item) => (
+              <ExecutionItemRow
+                key={`${item.suite}-${item.id}`}
+                progressItem={item}
+                expanded={expandedItem === progressItemKey(item)}
+                onToggle={() => {
+                  const key = progressItemKey(item);
+                  setExpandedItem((prev) => (prev === key ? null : key));
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ExecutionItemRow({
+  progressItem,
+  expanded,
+  onToggle,
+}: {
+  progressItem: AcceptanceProgressItem;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const item = progressItem.item;
+  const status = item?.status || progressItem.status;
+  const copyCurl = () => {
+    if (!item?.url || item.url.startsWith("/")) return;
+    navigator.clipboard.writeText(`curl -i "${item.url}"`);
+  };
+
+  return (
+    <div className="w-full min-w-0 rounded-md border transition-colors hover:bg-muted/50">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="block w-full min-w-0 p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-expanded={expanded}
+      >
+        <div className="flex min-w-0 items-start gap-2">
+          <StatusIcon status={status} spinning={status === "running"} />
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="min-w-0 flex-1 break-words text-sm font-medium">{item?.name || progressItem.name}</span>
+              {item?.durationMs !== undefined && (
+                <span className="shrink-0 font-mono text-xs text-muted-foreground">{item.durationMs}ms</span>
+              )}
+              <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
+            </div>
+            {item?.url && <div className="mt-1 break-all text-xs text-muted-foreground">{item.url}</div>}
+            {item?.failureReason && <div className={`${INLINE_TEXT_CLASS} mt-1 text-xs text-red-500`}>{cleanDisplayText(item.failureReason)}</div>}
+          </div>
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="mx-3 mb-3 grid min-w-0 max-w-full gap-2 overflow-hidden rounded-md bg-muted/30 p-3 text-xs text-muted-foreground">
+          {item ? (
+            <>
+              <DetailLine label="状态" value={item.status} />
+              <DetailLine label="级别" value={item.severity || "-"} />
+              <DetailLine label="URL" value={item.url || "-"} breakAll />
+              <DetailLine label="预期" value={item.expected} />
+              <DetailLine label="实际" value={item.actual} />
+              <DetailLine label="失败原因" value={item.failureReason || "-"} />
+              <DetailLine label="耗时" value={`${item.durationMs}ms`} />
+              {item.responseHeaders && Object.keys(item.responseHeaders).length > 0 && (
+                <div className="min-w-0">
+                  <div className="mb-1 font-medium text-foreground">Response Headers</div>
+                  <pre className={`${DETAIL_TEXT_CLASS} max-h-48 overflow-auto rounded-md bg-muted p-2 text-[11px] leading-relaxed`}>
+                    {JSON.stringify(item.responseHeaders, null, 2)}
+                  </pre>
+                </div>
+              )}
+              <div className="flex justify-end pt-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    copyCurl();
+                  }}
+                  disabled={!item.url}
+                >
+                  <Clipboard className="mr-2 h-4 w-4" />
+                  复制 curl
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <DetailLine label="状态" value={progressItem.status} />
+              <DetailLine label="序号" value={`${progressItem.index + 1}/${progressItem.total || "-"}`} />
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -580,8 +790,9 @@ function LabeledInput({
   );
 }
 
-function StatusIcon({ status, spinning = false }: { status: AcceptanceStatus; spinning?: boolean }) {
-  if (spinning || status === "pending") return <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />;
+function StatusIcon({ status, spinning = false }: { status: AcceptanceStatus | "running"; spinning?: boolean }) {
+  if (spinning || status === "running") return <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />;
+  if (status === "pending") return <Circle className="h-4 w-4 shrink-0 text-muted-foreground" />;
   if (status === "pass") return <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />;
   if (status === "warn" || status === "manual") return <TriangleAlert className="h-4 w-4 shrink-0 text-amber-500" />;
   return <XCircle className="h-4 w-4 shrink-0 text-red-500" />;
@@ -593,6 +804,10 @@ function sectionDomId(suite: AcceptanceSuite): string {
 
 function itemKey(item: AcceptanceItem): string {
   return `${item.sectionId || item.suite || "item"}-${item.id}`;
+}
+
+function progressItemKey(item: AcceptanceProgressItem): string {
+  return `${item.suite}-${item.id}`;
 }
 
 function DetailLine({

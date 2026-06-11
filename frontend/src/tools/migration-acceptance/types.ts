@@ -101,6 +101,29 @@ export interface AcceptanceItem {
   evidenceText?: string;
 }
 
+export type AcceptanceProgressItemStatus = AcceptanceStatus | "running";
+
+export interface AcceptanceProgressItem {
+  id: number | string;
+  suite: AcceptanceSuite;
+  name: string;
+  status: AcceptanceProgressItemStatus;
+  index: number;
+  total: number;
+  item?: AcceptanceItem;
+}
+
+export interface AcceptanceSuiteProgress {
+  suite: AcceptanceSuite;
+  status: AcceptanceProgressItemStatus;
+  total: number;
+  completed: number;
+  failed: number;
+  warned: number;
+  currentItem?: AcceptanceProgressItem;
+  items: AcceptanceProgressItem[];
+}
+
 export interface AcceptanceSection {
   id: number | string;
   runId?: number;
