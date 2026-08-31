@@ -28,7 +28,7 @@ export function DiffForm({
     disableAnimations: true,
     hideSelectors: [],
     waitTime: 0,
-    failThreshold: 15,
+    failThreshold: 5,
   });
 
   const toggleCheck = (check: CheckType) => {
@@ -68,7 +68,7 @@ export function DiffForm({
       disableAnimations: true,
       hideSelectors: [],
       waitTime: 0,
-      failThreshold: 15,
+      failThreshold: 5,
     });
     onReset();
   };
@@ -205,11 +205,13 @@ export function DiffForm({
                   min={0}
                   max={100}
                   step={1}
-                  value={options.failThreshold || 15}
+                  value={options.failThreshold ?? 5}
                   onChange={(e) =>
                     setOptions((prev) => ({
                       ...prev,
-                      failThreshold: parseInt(e.target.value) || 15,
+                      failThreshold: Number.isNaN(e.target.valueAsNumber)
+                        ? 5
+                        : e.target.valueAsNumber,
                     }))
                   }
                 />

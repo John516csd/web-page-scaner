@@ -13,6 +13,7 @@ import { checkHttp } from './http-checker.js';
 import { checkSeo } from './seo-checker.js';
 import { checkContent } from './content-checker.js';
 import { checkVisual } from './visual-checker.js';
+import { getVisualDiffStatus } from './visual-policy.js';
 
 const TOOL_ID = 'page-diff';
 const SITE_TOOL_ID = 'page-diff-site';
@@ -131,8 +132,8 @@ taskManager.registerHandler(SITE_TOOL_ID, async (_taskId, payload, emit, signal)
         result.visual = await checkVisual(urlA, urlB, options || {});
       }
 
-      const hasFail = hasFailures(result);
-      const hasWarn = hasWarnings(result);
+      const hasFail = hasFailures(result, options);
+      const hasWarn = hasWarnings(result, options);
 
       const pageResult: PageResult = {
         path,
@@ -199,7 +200,7 @@ function changeRatio(added: number, removed: number, total: number): number {
 
 const CRITICAL_SEO_FIELDS = new Set(['title', 'description']);
 
-function hasFailures(result: DiffResult): boolean {
+function hasFailures(result: DiffResult, options?: SiteDiffRequest['options']): boolean {
   const httpFail = result.http?.items.some((i) => !i.match && i.name !== 'TTFB') ?? false;
   const seoFail = result.seo?.items.some((i) => !i.match && CRITICAL_SEO_FIELDS.has(i.name)) ?? false;
   const contentFail = result.content
@@ -207,18 +208,20 @@ function hasFailures(result: DiffResult): boolean {
        changeRatio(result.content.links.added.length, result.content.links.removed.length, result.content.links.countA) > 0.2 ||
        changeRatio(result.content.images.added.length, result.content.images.removed.length, result.content.images.countA) > 0.2)
     : false;
-  const visualFail = result.visual?.viewports.some((v) => v.diffPercentage > 15) ?? false;
+  const visualFail = result.visual?.viewports.some(
+    (v) => getVisualDiffStatus(v.diffPercentage, options?.failThreshold) === 'fail'
+  ) ?? false;
   return httpFail || seoFail || contentFail || visualFail;
 }
 
-function hasWarnings(result: DiffResult): boolean {
+function hasWarnings(result: DiffResult, options?: SiteDiffRequest['options']): boolean {
   const contentWarn = result.content
     ? (result.content.text.similarity < 80 ||
        result.content.links.added.length > 0 || result.content.links.removed.length > 0 ||
        result.content.images.added.length > 0 || result.content.images.removed.length > 0)
     : false;
   const visualWarn = result.visual?.viewports.some(
-    (v) => v.diffPercentage > 0 && v.diffPercentage <= 15
+    (v) => getVisualDiffStatus(v.diffPercentage, options?.failThreshold) === 'warn'
   ) ?? false;
   return contentWarn || visualWarn;
 }
