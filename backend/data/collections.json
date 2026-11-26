@@ -273,10 +273,9 @@
       {
         "id": "top100-10",
         "name": "#10 /blog/how-to-record-youtube-video",
-        "description": "流量 Top 10 页面，当前流量: 6863。根据新 Lambda 函数，会 301 重定向到 /blog/notta-youtube-video-transcription",
+        "description": "流量 Top 10 页面，当前流量: 6863。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/blog/how-to-record-youtube-video",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://www.notta.ai/blog/notta-youtube-video-transcription"
+        "expectedStatus": 410
       },
       {
         "id": "top100-11",
@@ -288,18 +287,16 @@
       {
         "id": "top100-12",
         "name": "#12 /blog/conversational-ai",
-        "description": "流量 Top 12 页面，当前流量: 4626。根据新 Lambda 函数，会 301 重定向到 /blog/circleback-auto-minigirei-creation-tool",
+        "description": "流量 Top 12 页面，当前流量: 4626。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/blog/conversational-ai",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://www.notta.ai/blog/circleback-auto-minigirei-creation-tool"
+        "expectedStatus": 410
       },
       {
         "id": "top100-13",
         "name": "#13 /blog/summary-tips",
-        "description": "流量 Top 13 页面，当前流量: 4325。根据新 Lambda 函数，会 301 重定向到 /blog/book-summary-tips",
+        "description": "流量 Top 13 页面，当前流量: 4325。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/blog/summary-tips",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://www.notta.ai/blog/book-summary-tips"
+        "expectedStatus": 410
       },
       {
         "id": "top100-14",
@@ -311,9 +308,9 @@
       {
         "id": "top100-15",
         "name": "#15 /blog/using-twitter-spaces",
-        "description": "流量 Top 15 页面，当前流量: 3993",
+        "description": "流量 Top 15 页面，当前流量: 3993。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/blog/using-twitter-spaces",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-16",
@@ -340,10 +337,9 @@
       {
         "id": "top100-19",
         "name": "#19 /en/blog/how-to-check-voicemail-on-android",
-        "description": "流量 Top 19 页面，当前流量: 3509。根据新 Lambda 函数，会 301 重定向到 /en/blog/how-to-set-up-voicemail-on-android",
+        "description": "流量 Top 19 页面，当前流量: 3509。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/en/blog/how-to-check-voicemail-on-android",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://www.notta.ai/en/blog/how-to-set-up-voicemail-on-android"
+        "expectedStatus": 410
       },
       {
         "id": "top100-20",
@@ -369,10 +365,9 @@
       {
         "id": "top100-23",
         "name": "#23 /blog/best-scheduling-apps",
-        "description": "流量 Top 23 页面，当前流量: 2840。根据新 Lambda 函数，会 301 重定向到 /blog/best-scheduling--apps",
+        "description": "流量 Top 23 页面，当前流量: 2840。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/blog/best-scheduling-apps",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://www.notta.ai/blog/best-scheduling--apps"
+        "expectedStatus": 410
       },
       {
         "id": "top100-24",
@@ -391,9 +386,9 @@
       {
         "id": "top100-26",
         "name": "#26 /en/blog/rask-ai-alternatives",
-        "description": "流量 Top 26 页面，当前流量: 2548",
+        "description": "流量 Top 26 页面，当前流量: 2548。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/en/blog/rask-ai-alternatives",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-27",
@@ -412,9 +407,9 @@
       {
         "id": "top100-29",
         "name": "#29 /blog/best-soft-for-radio-recording",
-        "description": "流量 Top 29 页面，当前流量: 2310",
+        "description": "流量 Top 29 页面，当前流量: 2310。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/blog/best-soft-for-radio-recording",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-30",
@@ -426,10 +421,9 @@
       {
         "id": "top100-31",
         "name": "#31 /en/blog/meeting-invitation-email",
-        "description": "流量 Top 31 页面，当前流量: 2221。根据新 Lambda 函数，会 301 重定向到 /en/blog/email-to-someone-who-missed-a-meeting",
+        "description": "流量 Top 31 页面，当前流量: 2221。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/en/blog/meeting-invitation-email",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://www.notta.ai/en/blog/email-to-someone-who-missed-a-meeting"
+        "expectedStatus": 410
       },
       {
         "id": "top100-32",
@@ -561,17 +555,16 @@
       {
         "id": "top100-50",
         "name": "#50 /blog/best-text-to-speech-soft",
-        "description": "流量 Top 50 页面，当前流量: 1682。根据新 Lambda 函数，会 301 重定向到 /blog/speech-to-text-apps",
+        "description": "流量 Top 50 页面，当前流量: 1682。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/blog/best-text-to-speech-soft",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://www.notta.ai/blog/speech-to-text-apps"
+        "expectedStatus": 410
       },
       {
         "id": "top100-51",
         "name": "#51 /blog/word-minutes-format",
-        "description": "流量 Top 51 页面，当前流量: 1663",
+        "description": "流量 Top 51 页面，当前流量: 1663。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/blog/word-minutes-format",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-52",
@@ -583,10 +576,9 @@
       {
         "id": "top100-53",
         "name": "#53 /blog/chatgpt-voice-conversation",
-        "description": "流量 Top 53 页面，当前流量: 1560。根据新 Lambda 函数，会 301 重定向到 /blog/real-time-voice-translation-apps-recommendations",
+        "description": "流量 Top 53 页面，当前流量: 1560。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/blog/chatgpt-voice-conversation",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://www.notta.ai/blog/real-time-voice-translation-apps-recommendations"
+        "expectedStatus": 410
       },
       {
         "id": "top100-54",
@@ -619,17 +611,16 @@
       {
         "id": "top100-58",
         "name": "#58 /blog/what-is-summary",
-        "description": "流量 Top 58 页面，当前流量: 1349",
+        "description": "流量 Top 58 页面，当前流量: 1349。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/blog/what-is-summary",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-59",
         "name": "#59 /blog/how-to-write-profile",
-        "description": "流量 Top 59 页面，当前流量: 1331。根据新 Lambda 函数，会 301 重定向到 /blog/how-to-write-summary-reports",
+        "description": "流量 Top 59 页面，当前流量: 1331。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/blog/how-to-write-profile",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://www.notta.ai/blog/how-to-write-summary-reports"
+        "expectedStatus": 410
       },
       {
         "id": "top100-60",
@@ -662,9 +653,9 @@
       {
         "id": "top100-64",
         "name": "#64 /en/blog/how-do-i-activate-voice-to-text-on-android",
-        "description": "流量 Top 64 页面，当前流量: 1178",
+        "description": "流量 Top 64 页面，当前流量: 1178。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/en/blog/how-do-i-activate-voice-to-text-on-android",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-65",
@@ -691,9 +682,9 @@
       {
         "id": "top100-68",
         "name": "#68 /en/blog/follow-up-email-templates",
-        "description": "流量 Top 68 页面，当前流量: 1095",
+        "description": "流量 Top 68 页面，当前流量: 1095。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/en/blog/follow-up-email-templates",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-69",
@@ -742,10 +733,9 @@
       {
         "id": "top100-75",
         "name": "#75 /en/blog/thank-you-email-after-meeting",
-        "description": "流量 Top 75 页面，当前流量: 1038。根据新 Lambda 函数，会 301 重定向到 /en/blog/email-to-someone-who-missed-a-meeting",
+        "description": "流量 Top 75 页面，当前流量: 1038。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/en/blog/thank-you-email-after-meeting",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://www.notta.ai/en/blog/email-to-someone-who-missed-a-meeting"
+        "expectedStatus": 410
       },
       {
         "id": "top100-76",
@@ -799,9 +789,9 @@
       {
         "id": "top100-83",
         "name": "#83 /en/blog/where-do-google-meet-recordings-go",
-        "description": "流量 Top 83 页面，当前流量: 839",
+        "description": "流量 Top 83 页面，当前流量: 839。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/en/blog/where-do-google-meet-recordings-go",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-84",
@@ -827,9 +817,9 @@
       {
         "id": "top100-87",
         "name": "#87 /en/blog/share-screen-on-google-meet",
-        "description": "流量 Top 87 页面，当前流量: 794",
+        "description": "流量 Top 87 页面，当前流量: 794。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/en/blog/share-screen-on-google-meet",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-88",
@@ -848,10 +838,9 @@
       {
         "id": "top100-90",
         "name": "#90 /blog/effect-study-methods",
-        "description": "流量 Top 90 页面，当前流量: 783。根据新 Lambda 函数，会 301 重定向到 /blog/iphone-secret-recording-methods",
+        "description": "流量 Top 90 页面，当前流量: 783。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/blog/effect-study-methods",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://www.notta.ai/blog/iphone-secret-recording-methods"
+        "expectedStatus": 410
       },
       {
         "id": "top100-91",
@@ -898,9 +887,9 @@
       {
         "id": "top100-97",
         "name": "#97 /ar/blog/voice-translator-app",
-        "description": "流量 Top 97 页面，当前流量: 711",
+        "description": "流量 Top 97 页面，当前流量: 711。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/ar/blog/voice-translator-app",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-98",
@@ -912,20 +901,20 @@
       {
         "id": "top100-99",
         "name": "#99 /en/blog/how-to-change-name-on-zoom",
-        "description": "流量 Top 99 页面，当前流量: 704",
+        "description": "流量 Top 99 页面，当前流量: 704。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/en/blog/how-to-change-name-on-zoom",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-100",
         "name": "#100 /en/blog/how-to-record-a-zoom-meeting",
-        "description": "流量 Top 100 页面，当前流量: 688",
+        "description": "流量 Top 100 页面，当前流量: 688。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://www.notta.ai/en/blog/how-to-record-a-zoom-meeting",
-        "expectedStatus": 200
+        "expectedStatus": 410
       }
     ],
     "createdAt": "2026-03-07T15:44:19.706Z",
-    "updatedAt": "2026-03-07T15:44:19.706Z"
+    "updatedAt": "2026-11-26T04:04:23.039Z"
   },
   {
     "id": "test-redirect-tests",
@@ -1201,10 +1190,9 @@
       {
         "id": "top100-10-test",
         "name": "#10 /blog/how-to-record-youtube-video",
-        "description": "流量 Top 10 页面，当前流量: 6863。根据新 Lambda 函数，会 301 重定向到 /blog/notta-youtube-video-transcription",
+        "description": "流量 Top 10 页面，当前流量: 6863。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/how-to-record-youtube-video",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/notta-youtube-video-transcription"
+        "expectedStatus": 410
       },
       {
         "id": "top100-11-test",
@@ -1216,18 +1204,16 @@
       {
         "id": "top100-12-test",
         "name": "#12 /blog/conversational-ai",
-        "description": "流量 Top 12 页面，当前流量: 4626。根据新 Lambda 函数，会 301 重定向到 /blog/circleback-auto-minigirei-creation-tool",
+        "description": "流量 Top 12 页面，当前流量: 4626。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/conversational-ai",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/circleback-auto-minigirei-creation-tool"
+        "expectedStatus": 410
       },
       {
         "id": "top100-13-test",
         "name": "#13 /blog/summary-tips",
-        "description": "流量 Top 13 页面，当前流量: 4325。根据新 Lambda 函数，会 301 重定向到 /blog/book-summary-tips",
+        "description": "流量 Top 13 页面，当前流量: 4325。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/summary-tips",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/book-summary-tips"
+        "expectedStatus": 410
       },
       {
         "id": "top100-14-test",
@@ -1239,9 +1225,9 @@
       {
         "id": "top100-15-test",
         "name": "#15 /blog/using-twitter-spaces",
-        "description": "流量 Top 15 页面，当前流量: 3993",
+        "description": "流量 Top 15 页面，当前流量: 3993。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/using-twitter-spaces",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-16-test",
@@ -1268,10 +1254,9 @@
       {
         "id": "top100-19-test",
         "name": "#19 /en/blog/how-to-check-voicemail-on-android",
-        "description": "流量 Top 19 页面，当前流量: 3509。根据新 Lambda 函数，会 301 重定向到 /en/blog/how-to-set-up-voicemail-on-android",
+        "description": "流量 Top 19 页面，当前流量: 3509。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/blog/how-to-check-voicemail-on-android",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/blog/how-to-set-up-voicemail-on-android"
+        "expectedStatus": 410
       },
       {
         "id": "top100-20-test",
@@ -1297,10 +1282,9 @@
       {
         "id": "top100-23-test",
         "name": "#23 /blog/best-scheduling-apps",
-        "description": "流量 Top 23 页面，当前流量: 2840。根据新 Lambda 函数，会 301 重定向到 /blog/best-scheduling--apps",
+        "description": "流量 Top 23 页面，当前流量: 2840。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/best-scheduling-apps",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/best-scheduling--apps"
+        "expectedStatus": 410
       },
       {
         "id": "top100-24-test",
@@ -1319,9 +1303,9 @@
       {
         "id": "top100-26-test",
         "name": "#26 /en/blog/rask-ai-alternatives",
-        "description": "流量 Top 26 页面，当前流量: 2548",
+        "description": "流量 Top 26 页面，当前流量: 2548。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/blog/rask-ai-alternatives",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-27-test",
@@ -1340,9 +1324,9 @@
       {
         "id": "top100-29-test",
         "name": "#29 /blog/best-soft-for-radio-recording",
-        "description": "流量 Top 29 页面，当前流量: 2310",
+        "description": "流量 Top 29 页面，当前流量: 2310。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/best-soft-for-radio-recording",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-30-test",
@@ -1354,10 +1338,9 @@
       {
         "id": "top100-31-test",
         "name": "#31 /en/blog/meeting-invitation-email",
-        "description": "流量 Top 31 页面，当前流量: 2221。根据新 Lambda 函数，会 301 重定向到 /en/blog/email-to-someone-who-missed-a-meeting",
+        "description": "流量 Top 31 页面，当前流量: 2221。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/blog/meeting-invitation-email",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/blog/email-to-someone-who-missed-a-meeting"
+        "expectedStatus": 410
       },
       {
         "id": "top100-32-test",
@@ -1489,17 +1472,16 @@
       {
         "id": "top100-50-test",
         "name": "#50 /blog/best-text-to-speech-soft",
-        "description": "流量 Top 50 页面，当前流量: 1682。根据新 Lambda 函数，会 301 重定向到 /blog/speech-to-text-apps",
+        "description": "流量 Top 50 页面，当前流量: 1682。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/best-text-to-speech-soft",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/speech-to-text-apps"
+        "expectedStatus": 410
       },
       {
         "id": "top100-51-test",
         "name": "#51 /blog/word-minutes-format",
-        "description": "流量 Top 51 页面，当前流量: 1663",
+        "description": "流量 Top 51 页面，当前流量: 1663。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/word-minutes-format",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-52-test",
@@ -1511,10 +1493,9 @@
       {
         "id": "top100-53-test",
         "name": "#53 /blog/chatgpt-voice-conversation",
-        "description": "流量 Top 53 页面，当前流量: 1560。根据新 Lambda 函数，会 301 重定向到 /blog/real-time-voice-translation-apps-recommendations",
+        "description": "流量 Top 53 页面，当前流量: 1560。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/chatgpt-voice-conversation",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/real-time-voice-translation-apps-recommendations"
+        "expectedStatus": 410
       },
       {
         "id": "top100-54-test",
@@ -1547,17 +1528,16 @@
       {
         "id": "top100-58-test",
         "name": "#58 /blog/what-is-summary",
-        "description": "流量 Top 58 页面，当前流量: 1349",
+        "description": "流量 Top 58 页面，当前流量: 1349。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/what-is-summary",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-59-test",
         "name": "#59 /blog/how-to-write-profile",
-        "description": "流量 Top 59 页面，当前流量: 1331。根据新 Lambda 函数，会 301 重定向到 /blog/how-to-write-summary-reports",
+        "description": "流量 Top 59 页面，当前流量: 1331。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/how-to-write-profile",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/how-to-write-summary-reports"
+        "expectedStatus": 410
       },
       {
         "id": "top100-60-test",
@@ -1590,9 +1570,9 @@
       {
         "id": "top100-64-test",
         "name": "#64 /en/blog/how-do-i-activate-voice-to-text-on-android",
-        "description": "流量 Top 64 页面，当前流量: 1178",
+        "description": "流量 Top 64 页面，当前流量: 1178。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/blog/how-do-i-activate-voice-to-text-on-android",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-65-test",
@@ -1619,9 +1599,9 @@
       {
         "id": "top100-68-test",
         "name": "#68 /en/blog/follow-up-email-templates",
-        "description": "流量 Top 68 页面，当前流量: 1095",
+        "description": "流量 Top 68 页面，当前流量: 1095。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/blog/follow-up-email-templates",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-69-test",
@@ -1670,10 +1650,9 @@
       {
         "id": "top100-75-test",
         "name": "#75 /en/blog/thank-you-email-after-meeting",
-        "description": "流量 Top 75 页面，当前流量: 1038。根据新 Lambda 函数，会 301 重定向到 /en/blog/email-to-someone-who-missed-a-meeting",
+        "description": "流量 Top 75 页面，当前流量: 1038。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/blog/thank-you-email-after-meeting",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/blog/email-to-someone-who-missed-a-meeting"
+        "expectedStatus": 410
       },
       {
         "id": "top100-76-test",
@@ -1727,9 +1706,9 @@
       {
         "id": "top100-83-test",
         "name": "#83 /en/blog/where-do-google-meet-recordings-go",
-        "description": "流量 Top 83 页面，当前流量: 839",
+        "description": "流量 Top 83 页面，当前流量: 839。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/blog/where-do-google-meet-recordings-go",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-84-test",
@@ -1755,9 +1734,9 @@
       {
         "id": "top100-87-test",
         "name": "#87 /en/blog/share-screen-on-google-meet",
-        "description": "流量 Top 87 页面，当前流量: 794",
+        "description": "流量 Top 87 页面，当前流量: 794。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/blog/share-screen-on-google-meet",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-88-test",
@@ -1776,10 +1755,9 @@
       {
         "id": "top100-90-test",
         "name": "#90 /blog/effect-study-methods",
-        "description": "流量 Top 90 页面，当前流量: 783。根据新 Lambda 函数，会 301 重定向到 /blog/iphone-secret-recording-methods",
+        "description": "流量 Top 90 页面，当前流量: 783。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/effect-study-methods",
-        "expectedStatus": 301,
-        "expectedRedirectUrl": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/blog/iphone-secret-recording-methods"
+        "expectedStatus": 410
       },
       {
         "id": "top100-91-test",
@@ -1826,9 +1804,9 @@
       {
         "id": "top100-97-test",
         "name": "#97 /ar/blog/voice-translator-app",
-        "description": "流量 Top 97 页面，当前流量: 711",
+        "description": "流量 Top 97 页面，当前流量: 711。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/ar/blog/voice-translator-app",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-98-test",
@@ -1840,20 +1818,20 @@
       {
         "id": "top100-99-test",
         "name": "#99 /en/blog/how-to-change-name-on-zoom",
-        "description": "流量 Top 99 页面，当前流量: 704",
+        "description": "流量 Top 99 页面，当前流量: 704。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/blog/how-to-change-name-on-zoom",
-        "expectedStatus": 200
+        "expectedStatus": 410
       },
       {
         "id": "top100-100-test",
         "name": "#100 /en/blog/how-to-record-a-zoom-meeting",
-        "description": "流量 Top 100 页面，当前流量: 688",
+        "description": "流量 Top 100 页面，当前流量: 688。该博客已下线，预期直接返回 HTTP 410。",
         "url": "https://test-wdnc5k6v5hu1i2uwb6oa.notta.ai/en/blog/how-to-record-a-zoom-meeting",
-        "expectedStatus": 200
+        "expectedStatus": 410
       }
     ],
     "createdAt": "2026-03-16T06:21:44.019Z",
-    "updatedAt": "2026-03-16T06:21:44.019Z"
+    "updatedAt": "2026-11-26T04:04:23.039Z"
   },
   {
     "id": "noindex-tests",
